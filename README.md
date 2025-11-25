@@ -51,6 +51,33 @@ chmod +x install-abyss.sh
 ./install-abyss.sh
 ```
 
+### Theme Variants
+
+Install with accent colors for a subtle splash of color:
+
+```bash
+# Pure monochrome (default)
+./install-abyss.sh
+
+# Red accent variant
+./install-abyss.sh --variant crimson
+
+# Blue accent variant
+./install-abyss.sh --variant cobalt
+
+# Green accent variant
+./install-abyss.sh --variant emerald
+```
+
+| Variant | Accent Color | Preview |
+|---------|-------------|---------|
+| Pure | Monochrome | Default black/white/gray |
+| Crimson | #8b0000 | Deep red accents |
+| Cobalt | #0a3d62 | Deep blue accents |
+| Emerald | #0a4a0a | Deep green accents |
+
+Each variant installs as a separate theme, so you can install multiple variants and switch between them in System Settings.
+
 ### Post-Installation
 
 1. **Restart Plasma Shell**:
@@ -61,7 +88,7 @@ chmod +x install-abyss.sh
 2. **Or reboot** for complete SDDM theme application
 
 3. **Manual Theme Selection** (if needed):
-   - System Settings → Appearance → Global Theme → **Abyss**
+   - System Settings → Appearance → Global Theme → **Abyss** (or Abyss-Crimson, etc.)
 
 ### Detailed Installation Guide
 

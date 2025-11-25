@@ -20,16 +20,126 @@ GTK3_DIR="$HOME/.themes/$THEME_NAME"
 WALLPAPER_DIR="$HOME/.local/share/wallpapers/$THEME_NAME"
 SPLASH_DIR="$HOME/.local/share/plasma/look-and-feel/com.github.abyss/contents/splash"
 
-# Color palette
+# Color palette (base monochrome)
 COLOR_BLACK="#000000"
 COLOR_WHITE="#ffffff"
 COLOR_GRAY1="#050505"
 COLOR_GRAY2="#0a0a0a"
 COLOR_GRAY3="#111111"
 
+# Accent colors (set by variant selection)
+COLOR_ACCENT=""
+COLOR_ACCENT_DIM=""
+COLOR_ACCENT_BRIGHT=""
+THEME_VARIANT=""
+
 # ============================================================================
 # FUNCTIONS
 # ============================================================================
+
+# Set accent colors based on variant
+set_variant_colors() {
+    local variant="${1:-}"
+    
+    case "$variant" in
+        crimson|red)
+            THEME_VARIANT="Crimson"
+            COLOR_ACCENT="#8b0000"
+            COLOR_ACCENT_DIM="#4a0000"
+            COLOR_ACCENT_BRIGHT="#cc0000"
+            ;;
+        cobalt|blue)
+            THEME_VARIANT="Cobalt"
+            COLOR_ACCENT="#0a3d62"
+            COLOR_ACCENT_DIM="#051d30"
+            COLOR_ACCENT_BRIGHT="#1e6fa3"
+            ;;
+        emerald|green)
+            THEME_VARIANT="Emerald"
+            COLOR_ACCENT="#0a4a0a"
+            COLOR_ACCENT_DIM="#052505"
+            COLOR_ACCENT_BRIGHT="#0d6b0d"
+            ;;
+        ""|pure|mono)
+            # Pure monochrome (default) - use gray for accents
+            THEME_VARIANT=""
+            COLOR_ACCENT="$COLOR_GRAY3"
+            COLOR_ACCENT_DIM="$COLOR_GRAY2"
+            COLOR_ACCENT_BRIGHT="$COLOR_WHITE"
+            ;;
+        *)
+            error "Unknown variant: $variant. Use: crimson, cobalt, emerald, or leave empty for pure monochrome."
+            ;;
+    esac
+    
+    # Update theme name with variant suffix
+    if [[ -n "$THEME_VARIANT" ]]; then
+        THEME_NAME="Abyss-${THEME_VARIANT}"
+    else
+        THEME_NAME="Abyss"
+    fi
+    
+    # Update all paths with new theme name
+    THEME_DIR="$HOME/.local/share/plasma/desktoptheme/$THEME_NAME"
+    LOOKFEEL_DIR="$HOME/.local/share/plasma/look-and-feel/com.github.abyss${THEME_VARIANT:+.${THEME_VARIANT,,}}"
+    SDDM_THEME_DIR="/usr/share/sddm/themes/$THEME_NAME"
+    GTK2_DIR="$HOME/.themes/$THEME_NAME"
+    GTK3_DIR="$HOME/.themes/$THEME_NAME"
+    WALLPAPER_DIR="$HOME/.local/share/wallpapers/$THEME_NAME"
+    SPLASH_DIR="$LOOKFEEL_DIR/contents/splash"
+}
+
+show_help() {
+    cat << EOF
+ABYSS - KDE Plasma Monochrome Theme Installer
+
+Usage: $0 [OPTIONS]
+
+Options:
+    -h, --help              Show this help message
+    -v, --variant VARIANT   Install a color accent variant
+    
+Variants:
+    (none)      Pure monochrome (default)
+    crimson     Red accent (#8b0000)
+    cobalt      Blue accent (#0a3d62)
+    emerald     Green accent (#0a4a0a)
+
+Examples:
+    $0                      Install pure monochrome Abyss
+    $0 --variant crimson    Install Abyss with red accents
+    $0 -v cobalt            Install Abyss with blue accents
+    $0 -v emerald           Install Abyss with green accents
+
+EOF
+}
+
+parse_arguments() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -v|--variant)
+                if [[ -n "${2:-}" ]]; then
+                    set_variant_colors "$2"
+                    shift 2
+                else
+                    error "Variant name required. Use: crimson, cobalt, or emerald"
+                fi
+                ;;
+            *)
+                error "Unknown option: $1. Use --help for usage."
+                ;;
+        esac
+    done
+    
+    # Set default if no variant specified
+    if [[ -z "$COLOR_ACCENT" ]]; then
+        set_variant_colors ""
+    fi
+}
 
 log() {
     echo "[ABYSS] $*"
@@ -167,23 +277,47 @@ EOF
         local pointsize=$((12 * width / 1920))
         local offset_x=$((100 * width / 1920))
         local offset_y=$((100 * height / 1080))
+        local title_size=$((24 * width / 1920))
+        local title_y=$((height - 60 * height / 1080))
         
         log "Generating ${res} wallpaper..."
+        
+        # Create base wallpaper with ASCII art
         if convert -size "$res" xc:black \
             -font "$font" \
             -pointsize "$pointsize" \
             -fill white \
             -annotate "+${offset_x}+${offset_y}" "@/tmp/abyss_ascii.txt" \
-            "$wallpaper_path" 2>/dev/null; then
+            /tmp/abyss_base.png 2>/dev/null; then
+            
+            # Add theme name with accent color at bottom
+            convert /tmp/abyss_base.png \
+                -font "$font" \
+                -pointsize "$title_size" \
+                -fill "$COLOR_ACCENT_BRIGHT" \
+                -gravity south \
+                -annotate "+0+30" "$THEME_NAME" \
+                "$wallpaper_path" 2>/dev/null || \
+                mv /tmp/abyss_base.png "$wallpaper_path"
+            
+            rm -f /tmp/abyss_base.png
             log "  Created: $wallpaper_path"
         else
-            # Fallback: create simple black image if ASCII rendering fails
-            log "  Warning: ASCII rendering failed, creating solid black wallpaper"
-            convert -size "$res" xc:black "$wallpaper_path"
+            # Fallback: create simple black image with theme name if ASCII rendering fails
+            log "  Warning: ASCII rendering failed, creating minimal wallpaper"
+            convert -size "$res" xc:black \
+                -font "$font" \
+                -pointsize "$title_size" \
+                -fill "$COLOR_ACCENT_BRIGHT" \
+                -gravity center \
+                -annotate "+0+0" "$THEME_NAME" \
+                "$wallpaper_path" 2>/dev/null || \
+                convert -size "$res" xc:black "$wallpaper_path"
         fi
     done
     
     # Create metadata
+    local wallpaper_id="com.github.abyss${THEME_VARIANT:+.${THEME_VARIANT,,}}.wallpaper"
     cat > "$WALLPAPER_DIR/metadata.json" << EOF
 {
     "KPlugin": {
@@ -192,8 +326,8 @@ EOF
                 "Name": "Abyss Theme"
             }
         ],
-        "Id": "com.github.abyss.wallpaper",
-        "Name": "Abyss",
+        "Id": "$wallpaper_id",
+        "Name": "$THEME_NAME",
         "License": "MIT"
     }
 }
@@ -230,17 +364,17 @@ BackgroundAlternate=$COLOR_GRAY3
 ForegroundNormal=$COLOR_WHITE
 ForegroundInactive=$COLOR_GRAY3
 ForegroundActive=$COLOR_WHITE
-ForegroundLink=$COLOR_WHITE
-ForegroundVisited=$COLOR_GRAY3
+ForegroundLink=$COLOR_ACCENT_BRIGHT
+ForegroundVisited=$COLOR_ACCENT_DIM
 ForegroundNegative=$COLOR_WHITE
 ForegroundNeutral=$COLOR_WHITE
 ForegroundPositive=$COLOR_WHITE
-DecorationFocus=$COLOR_GRAY3
-DecorationHover=$COLOR_GRAY2
+DecorationFocus=$COLOR_ACCENT
+DecorationHover=$COLOR_ACCENT_DIM
 
 [Colors:Selection]
-BackgroundNormal=$COLOR_GRAY3
-BackgroundAlternate=$COLOR_GRAY2
+BackgroundNormal=$COLOR_ACCENT
+BackgroundAlternate=$COLOR_ACCENT_DIM
 ForegroundNormal=$COLOR_WHITE
 ForegroundInactive=$COLOR_GRAY3
 ForegroundActive=$COLOR_WHITE
@@ -249,8 +383,8 @@ ForegroundVisited=$COLOR_GRAY3
 ForegroundNegative=$COLOR_WHITE
 ForegroundNeutral=$COLOR_WHITE
 ForegroundPositive=$COLOR_WHITE
-DecorationFocus=$COLOR_GRAY3
-DecorationHover=$COLOR_GRAY2
+DecorationFocus=$COLOR_ACCENT_BRIGHT
+DecorationHover=$COLOR_ACCENT
 
 [Colors:Tooltip]
 BackgroundNormal=$COLOR_BLACK
@@ -258,13 +392,13 @@ BackgroundAlternate=$COLOR_GRAY1
 ForegroundNormal=$COLOR_WHITE
 ForegroundInactive=$COLOR_GRAY3
 ForegroundActive=$COLOR_WHITE
-ForegroundLink=$COLOR_WHITE
-ForegroundVisited=$COLOR_GRAY3
+ForegroundLink=$COLOR_ACCENT_BRIGHT
+ForegroundVisited=$COLOR_ACCENT_DIM
 ForegroundNegative=$COLOR_WHITE
 ForegroundNeutral=$COLOR_WHITE
 ForegroundPositive=$COLOR_WHITE
-DecorationFocus=$COLOR_GRAY3
-DecorationHover=$COLOR_GRAY2
+DecorationFocus=$COLOR_ACCENT
+DecorationHover=$COLOR_ACCENT_DIM
 
 [Colors:View]
 BackgroundNormal=$COLOR_BLACK
@@ -272,13 +406,13 @@ BackgroundAlternate=$COLOR_GRAY1
 ForegroundNormal=$COLOR_WHITE
 ForegroundInactive=$COLOR_GRAY3
 ForegroundActive=$COLOR_WHITE
-ForegroundLink=$COLOR_WHITE
-ForegroundVisited=$COLOR_GRAY3
+ForegroundLink=$COLOR_ACCENT_BRIGHT
+ForegroundVisited=$COLOR_ACCENT_DIM
 ForegroundNegative=$COLOR_WHITE
 ForegroundNeutral=$COLOR_WHITE
 ForegroundPositive=$COLOR_WHITE
-DecorationFocus=$COLOR_GRAY3
-DecorationHover=$COLOR_GRAY2
+DecorationFocus=$COLOR_ACCENT
+DecorationHover=$COLOR_ACCENT_DIM
 
 [Colors:Window]
 BackgroundNormal=$COLOR_BLACK
@@ -286,13 +420,13 @@ BackgroundAlternate=$COLOR_GRAY1
 ForegroundNormal=$COLOR_WHITE
 ForegroundInactive=$COLOR_GRAY3
 ForegroundActive=$COLOR_WHITE
-ForegroundLink=$COLOR_WHITE
-ForegroundVisited=$COLOR_GRAY3
+ForegroundLink=$COLOR_ACCENT_BRIGHT
+ForegroundVisited=$COLOR_ACCENT_DIM
 ForegroundNegative=$COLOR_WHITE
 ForegroundNeutral=$COLOR_WHITE
 ForegroundPositive=$COLOR_WHITE
-DecorationFocus=$COLOR_GRAY3
-DecorationHover=$COLOR_GRAY2
+DecorationFocus=$COLOR_ACCENT
+DecorationHover=$COLOR_ACCENT_DIM
 
 [Colors:Complementary]
 BackgroundNormal=$COLOR_BLACK
@@ -300,17 +434,17 @@ BackgroundAlternate=$COLOR_GRAY1
 ForegroundNormal=$COLOR_WHITE
 ForegroundInactive=$COLOR_GRAY3
 ForegroundActive=$COLOR_WHITE
-ForegroundLink=$COLOR_WHITE
-ForegroundVisited=$COLOR_GRAY3
+ForegroundLink=$COLOR_ACCENT_BRIGHT
+ForegroundVisited=$COLOR_ACCENT_DIM
 ForegroundNegative=$COLOR_WHITE
 ForegroundNeutral=$COLOR_WHITE
 ForegroundPositive=$COLOR_WHITE
-DecorationFocus=$COLOR_GRAY3
-DecorationHover=$COLOR_GRAY2
+DecorationFocus=$COLOR_ACCENT
+DecorationHover=$COLOR_ACCENT_DIM
 
 [WM]
 activeBackground=$COLOR_BLACK
-activeBlend=$COLOR_GRAY3
+activeBlend=$COLOR_ACCENT
 activeForeground=$COLOR_WHITE
 inactiveBackground=$COLOR_BLACK
 inactiveBlend=$COLOR_GRAY1
@@ -340,11 +474,15 @@ create_color_scheme() {
     
     # Convert hex colors to RGB format (required by KDE)
     local RGB_BLACK RGB_WHITE RGB_GRAY1 RGB_GRAY2 RGB_GRAY3
+    local RGB_ACCENT RGB_ACCENT_DIM RGB_ACCENT_BRIGHT
     RGB_BLACK=$(hex_to_rgb "$COLOR_BLACK")
     RGB_WHITE=$(hex_to_rgb "$COLOR_WHITE")
     RGB_GRAY1=$(hex_to_rgb "$COLOR_GRAY1")
     RGB_GRAY2=$(hex_to_rgb "$COLOR_GRAY2")
     RGB_GRAY3=$(hex_to_rgb "$COLOR_GRAY3")
+    RGB_ACCENT=$(hex_to_rgb "$COLOR_ACCENT")
+    RGB_ACCENT_DIM=$(hex_to_rgb "$COLOR_ACCENT_DIM")
+    RGB_ACCENT_BRIGHT=$(hex_to_rgb "$COLOR_ACCENT_BRIGHT")
     
     cat > "$HOME/.local/share/color-schemes/$THEME_NAME.colors" << EOF
 [ColorEffects:Disabled]
@@ -370,36 +508,36 @@ IntensityEffect=0
 [Colors:Button]
 BackgroundAlternate=$RGB_GRAY3
 BackgroundNormal=$RGB_GRAY2
-DecorationFocus=$RGB_GRAY3
-DecorationHover=$RGB_GRAY2
+DecorationFocus=$RGB_ACCENT
+DecorationHover=$RGB_ACCENT_DIM
 ForegroundActive=$RGB_WHITE
 ForegroundInactive=$RGB_GRAY3
-ForegroundLink=$RGB_WHITE
+ForegroundLink=$RGB_ACCENT_BRIGHT
 ForegroundNegative=$RGB_WHITE
 ForegroundNeutral=$RGB_WHITE
 ForegroundNormal=$RGB_WHITE
 ForegroundPositive=$RGB_WHITE
-ForegroundVisited=$RGB_GRAY3
+ForegroundVisited=$RGB_ACCENT_DIM
 
 [Colors:Complementary]
 BackgroundAlternate=$RGB_GRAY1
 BackgroundNormal=$RGB_BLACK
-DecorationFocus=$RGB_GRAY3
-DecorationHover=$RGB_GRAY2
+DecorationFocus=$RGB_ACCENT
+DecorationHover=$RGB_ACCENT_DIM
 ForegroundActive=$RGB_WHITE
 ForegroundInactive=$RGB_GRAY3
-ForegroundLink=$RGB_WHITE
+ForegroundLink=$RGB_ACCENT_BRIGHT
 ForegroundNegative=$RGB_WHITE
 ForegroundNeutral=$RGB_WHITE
 ForegroundNormal=$RGB_WHITE
 ForegroundPositive=$RGB_WHITE
-ForegroundVisited=$RGB_GRAY3
+ForegroundVisited=$RGB_ACCENT_DIM
 
 [Colors:Selection]
-BackgroundAlternate=$RGB_GRAY2
-BackgroundNormal=$RGB_GRAY3
-DecorationFocus=$RGB_GRAY3
-DecorationHover=$RGB_GRAY2
+BackgroundAlternate=$RGB_ACCENT_DIM
+BackgroundNormal=$RGB_ACCENT
+DecorationFocus=$RGB_ACCENT_BRIGHT
+DecorationHover=$RGB_ACCENT
 ForegroundActive=$RGB_WHITE
 ForegroundInactive=$RGB_GRAY3
 ForegroundLink=$RGB_WHITE
@@ -412,25 +550,25 @@ ForegroundVisited=$RGB_GRAY3
 [Colors:Tooltip]
 BackgroundAlternate=$RGB_GRAY1
 BackgroundNormal=$RGB_BLACK
-DecorationFocus=$RGB_GRAY3
-DecorationHover=$RGB_GRAY2
+DecorationFocus=$RGB_ACCENT
+DecorationHover=$RGB_ACCENT_DIM
 ForegroundActive=$RGB_WHITE
 ForegroundInactive=$RGB_GRAY3
-ForegroundLink=$RGB_WHITE
+ForegroundLink=$RGB_ACCENT_BRIGHT
 ForegroundNegative=$RGB_WHITE
 ForegroundNeutral=$RGB_WHITE
 ForegroundNormal=$RGB_WHITE
 ForegroundPositive=$RGB_WHITE
-ForegroundVisited=$RGB_GRAY3
+ForegroundVisited=$RGB_ACCENT_DIM
 
 [Colors:View]
 BackgroundAlternate=$RGB_GRAY1
 BackgroundNormal=$RGB_BLACK
-DecorationFocus=$RGB_GRAY3
-DecorationHover=$RGB_GRAY2
+DecorationFocus=$RGB_ACCENT
+DecorationHover=$RGB_ACCENT_DIM
 ForegroundActive=$RGB_WHITE
 ForegroundInactive=$RGB_GRAY3
-ForegroundLink=$RGB_WHITE
+ForegroundLink=$RGB_ACCENT_BRIGHT
 ForegroundNegative=$RGB_WHITE
 ForegroundNeutral=$RGB_WHITE
 ForegroundNormal=$RGB_WHITE
@@ -440,16 +578,16 @@ ForegroundVisited=$RGB_GRAY3
 [Colors:Window]
 BackgroundAlternate=$RGB_GRAY1
 BackgroundNormal=$RGB_BLACK
-DecorationFocus=$RGB_GRAY3
-DecorationHover=$RGB_GRAY2
+DecorationFocus=$RGB_ACCENT
+DecorationHover=$RGB_ACCENT_DIM
 ForegroundActive=$RGB_WHITE
 ForegroundInactive=$RGB_GRAY3
-ForegroundLink=$RGB_WHITE
+ForegroundLink=$RGB_ACCENT_BRIGHT
 ForegroundNegative=$RGB_WHITE
 ForegroundNeutral=$RGB_WHITE
 ForegroundNormal=$RGB_WHITE
 ForegroundPositive=$RGB_WHITE
-ForegroundVisited=$RGB_GRAY3
+ForegroundVisited=$RGB_ACCENT_DIM
 
 [General]
 ColorScheme=$THEME_NAME
@@ -461,7 +599,7 @@ contrast=4
 
 [WM]
 activeBackground=$RGB_BLACK
-activeBlend=$RGB_GRAY3
+activeBlend=$RGB_ACCENT
 activeForeground=$RGB_WHITE
 inactiveBackground=$RGB_BLACK
 inactiveBlend=$RGB_GRAY1
@@ -476,7 +614,7 @@ create_gtk_themes() {
     
     # GTK2
     cat > "$GTK2_DIR/gtk-2.0/gtkrc" << EOF
-gtk-color-scheme = "base_color:$COLOR_BLACK\\nbg_color:$COLOR_BLACK\\ntooltip_bg_color:$COLOR_BLACK\\nselected_bg_color:$COLOR_GRAY3\\ntext_color:$COLOR_WHITE\\nfg_color:$COLOR_WHITE\\ntooltip_fg_color:$COLOR_WHITE\\nselected_fg_color:$COLOR_WHITE"
+gtk-color-scheme = "base_color:$COLOR_BLACK\\nbg_color:$COLOR_BLACK\\ntooltip_bg_color:$COLOR_BLACK\\nselected_bg_color:$COLOR_ACCENT\\ntext_color:$COLOR_WHITE\\nfg_color:$COLOR_WHITE\\ntooltip_fg_color:$COLOR_WHITE\\nselected_fg_color:$COLOR_WHITE"
 
 gtk-icon-theme-name = "breeze-dark"
 gtk-font-name = "Sans 10"
@@ -495,10 +633,10 @@ gtk-xft-rgba = "rgb"
 
 style "default" {
     bg[NORMAL] = "$COLOR_BLACK"
-    bg[PRELIGHT] = "$COLOR_GRAY2"
-    bg[SELECTED] = "$COLOR_GRAY3"
+    bg[PRELIGHT] = "$COLOR_ACCENT_DIM"
+    bg[SELECTED] = "$COLOR_ACCENT"
     bg[INSENSITIVE] = "$COLOR_GRAY1"
-    bg[ACTIVE] = "$COLOR_GRAY2"
+    bg[ACTIVE] = "$COLOR_ACCENT_DIM"
     
     fg[NORMAL] = "$COLOR_WHITE"
     fg[PRELIGHT] = "$COLOR_WHITE"
@@ -514,9 +652,9 @@ style "default" {
     
     base[NORMAL] = "$COLOR_BLACK"
     base[PRELIGHT] = "$COLOR_GRAY1"
-    base[SELECTED] = "$COLOR_GRAY3"
+    base[SELECTED] = "$COLOR_ACCENT"
     base[INSENSITIVE] = "$COLOR_GRAY1"
-    base[ACTIVE] = "$COLOR_GRAY2"
+    base[ACTIVE] = "$COLOR_ACCENT_DIM"
 }
 
 class "*" style "default"
@@ -535,13 +673,22 @@ EOF
 }
 
 *:selected {
-    background-color: $COLOR_GRAY3;
+    background-color: $COLOR_ACCENT;
     color: $COLOR_WHITE;
+}
+
+*:focus {
+    border-color: $COLOR_ACCENT;
+    outline-color: $COLOR_ACCENT;
 }
 
 *:disabled {
     color: $COLOR_GRAY3;
 }
+
+@define-color accent_color $COLOR_ACCENT;
+@define-color accent_bg_color $COLOR_ACCENT;
+@define-color accent_fg_color $COLOR_WHITE;
 
 window {
     background-color: $COLOR_BLACK;
@@ -563,6 +710,10 @@ entry {
     border-color: $COLOR_GRAY3;
 }
 
+entry:focus {
+    border-color: $COLOR_ACCENT;
+}
+
 button {
     background-color: $COLOR_GRAY2;
     color: $COLOR_WHITE;
@@ -570,7 +721,12 @@ button {
 }
 
 button:hover {
-    background-color: $COLOR_GRAY3;
+    background-color: $COLOR_ACCENT_DIM;
+}
+
+button:checked,
+button:active {
+    background-color: $COLOR_ACCENT;
 }
 
 headerbar {
@@ -590,7 +746,7 @@ menu {
 }
 
 menuitem:hover {
-    background-color: $COLOR_GRAY3;
+    background-color: $COLOR_ACCENT;
 }
 
 scrollbar {
@@ -602,7 +758,37 @@ scrollbar slider {
 }
 
 scrollbar slider:hover {
-    background-color: $COLOR_WHITE;
+    background-color: $COLOR_ACCENT;
+}
+
+link, *:link {
+    color: $COLOR_ACCENT_BRIGHT;
+}
+
+link:visited, *:visited {
+    color: $COLOR_ACCENT_DIM;
+}
+
+selection {
+    background-color: $COLOR_ACCENT;
+    color: $COLOR_WHITE;
+}
+
+check:checked,
+radio:checked {
+    background-color: $COLOR_ACCENT;
+}
+
+switch:checked slider {
+    background-color: $COLOR_ACCENT;
+}
+
+progressbar progress {
+    background-color: $COLOR_ACCENT;
+}
+
+scale highlight {
+    background-color: $COLOR_ACCENT;
 }
 EOF
 
@@ -693,15 +879,15 @@ library=org.kde.breeze
 theme=Breeze
 EOF
 
-    # Splash screen
+    # Splash screen - using variable expansion for accent colors
     mkdir -p "$SPLASH_DIR/images"
     
-    cat > "$SPLASH_DIR/Splash.qml" << 'EOF'
+    cat > "$SPLASH_DIR/Splash.qml" << EOF
 import QtQuick 2.5
 
 Rectangle {
     id: root
-    color: "#000000"
+    color: "$COLOR_BLACK"
     
     property int stage
     
@@ -716,8 +902,8 @@ Rectangle {
         anchors.horizontalCenter: parent.horizontalCenter
         y: root.height / 3
         width: 200
-        height: 2
-        color: "#ffffff"
+        height: 3
+        color: "$COLOR_ACCENT_BRIGHT"
         
         SequentialAnimation on width {
             id: introAnimation
@@ -740,8 +926,8 @@ Rectangle {
     }
     
     Text {
-        text: "ABYSS"
-        color: "#ffffff"
+        text: "$THEME_NAME"
+        color: "$COLOR_WHITE"
         font.pointSize: 32
         font.family: "Monospace"
         anchors.horizontalCenter: parent.horizontalCenter
@@ -761,8 +947,8 @@ create_sddm_theme() {
         sudo mkdir -p "$SDDM_THEME_DIR"
     fi
     
-    # Main QML
-    sudo tee "$SDDM_THEME_DIR/Main.qml" > /dev/null << 'EOF'
+    # Main QML - using variable expansion for accent colors
+    sudo tee "$SDDM_THEME_DIR/Main.qml" > /dev/null << EOF
 import QtQuick 2.0
 import SddmComponents 2.0
 
@@ -770,7 +956,7 @@ Rectangle {
     id: root
     width: 1920
     height: 1080
-    color: "#000000"
+    color: "$COLOR_BLACK"
 
     TextConstants { id: textConstants }
 
@@ -785,7 +971,7 @@ Rectangle {
         anchors.margins: 20
         anchors.top: parent.top
         anchors.right: parent.right
-        color: "#ffffff"
+        color: "$COLOR_WHITE"
         font.family: "Monospace"
         font.pointSize: 18
     }
@@ -795,8 +981,8 @@ Rectangle {
         anchors.centerIn: parent
         width: 400
         height: 280
-        color: "#0a0a0a"
-        border.color: "#111111"
+        color: "$COLOR_GRAY2"
+        border.color: "$COLOR_ACCENT"
         border.width: 2
 
         Column {
@@ -804,8 +990,8 @@ Rectangle {
             spacing: 15
 
             Text {
-                text: "ABYSS"
-                color: "#ffffff"
+                text: "$THEME_NAME"
+                color: "$COLOR_WHITE"
                 font.family: "Monospace"
                 font.pointSize: 24
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -815,11 +1001,11 @@ Rectangle {
                 id: userName
                 width: 300
                 height: 40
-                color: "#ffffff"
-                borderColor: "#111111"
-                focusColor: "#ffffff"
-                hoverColor: "#111111"
-                textColor: "#ffffff"
+                color: "$COLOR_WHITE"
+                borderColor: "$COLOR_GRAY3"
+                focusColor: "$COLOR_ACCENT_BRIGHT"
+                hoverColor: "$COLOR_ACCENT_DIM"
+                textColor: "$COLOR_WHITE"
                 font.family: "Monospace"
                 font.pointSize: 12
                 text: userModel.lastUser
@@ -831,11 +1017,11 @@ Rectangle {
                 id: password
                 width: 300
                 height: 40
-                color: "#ffffff"
-                borderColor: "#111111"
-                focusColor: "#ffffff"
-                hoverColor: "#111111"
-                textColor: "#ffffff"
+                color: "$COLOR_WHITE"
+                borderColor: "$COLOR_GRAY3"
+                focusColor: "$COLOR_ACCENT_BRIGHT"
+                hoverColor: "$COLOR_ACCENT_DIM"
+                textColor: "$COLOR_WHITE"
                 font.family: "Monospace"
                 font.pointSize: 12
                 KeyNavigation.backtab: userName
@@ -853,16 +1039,16 @@ Rectangle {
                 id: session
                 width: 300
                 height: 30
-                color: "#111111"
-                borderColor: "#111111"
-                focusColor: "#ffffff"
-                hoverColor: "#0a0a0a"
-                textColor: "#ffffff"
+                color: "$COLOR_GRAY3"
+                borderColor: "$COLOR_GRAY3"
+                focusColor: "$COLOR_ACCENT_BRIGHT"
+                hoverColor: "$COLOR_ACCENT_DIM"
+                textColor: "$COLOR_WHITE"
                 font.family: "Monospace"
                 font.pointSize: 10
                 model: sessionModel
                 index: sessionModel.lastIndex
-                arrowColor: "#ffffff"
+                arrowColor: "$COLOR_WHITE"
                 KeyNavigation.backtab: password
                 KeyNavigation.tab: loginButton
             }
@@ -872,9 +1058,9 @@ Rectangle {
                 text: textConstants.login
                 width: 300
                 height: 40
-                color: "#111111"
-                textColor: "#ffffff"
-                borderColor: "#ffffff"
+                color: "$COLOR_ACCENT"
+                textColor: "$COLOR_WHITE"
+                borderColor: "$COLOR_ACCENT_BRIGHT"
                 font.family: "Monospace"
                 font.pointSize: 12
                 onClicked: sddm.login(userName.text, password.text, session.index)
@@ -989,7 +1175,14 @@ apply_plasma_settings() {
 # ============================================================================
 
 main() {
+    parse_arguments "$@"
+    
     log "Starting $THEME_NAME installation..."
+    if [[ -n "$THEME_VARIANT" ]]; then
+        log "Variant: $THEME_VARIANT (accent: $COLOR_ACCENT)"
+    else
+        log "Variant: Pure Monochrome"
+    fi
     
     check_root
     detect_plasma_version
