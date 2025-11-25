@@ -5,9 +5,9 @@
 ### System Requirements
 
 - **OS**: Arch Linux or Arch-based distribution
-- **Desktop Environment**: KDE Plasma 5 or 6
+- **Desktop Environment**: KDE Plasma 5 or 6 (auto-detected)
 - **RAM**: 2GB minimum (4GB recommended)
-- **Display**: Any resolution (wallpaper optimized for 1920x1080)
+- **Display**: Any resolution (wallpapers generated for multiple resolutions)
 
 ### Required Permissions
 
@@ -18,6 +18,7 @@ The script requires:
 ## Step-by-Step Installation
 
 ### 1. Clone Repository
+
 ```bash
 cd ~/
 git clone https://github.com/YOUR_USERNAME/abyss-kde-theme.git
@@ -25,6 +26,7 @@ cd abyss-kde-theme
 ```
 
 ### 2. Review Script (Optional)
+
 ```bash
 less install-abyss.sh
 ```
@@ -32,20 +34,41 @@ less install-abyss.sh
 The script is idempotent and safe to inspect before execution.
 
 ### 3. Make Executable
+
 ```bash
 chmod +x install-abyss.sh
 ```
 
 ### 4. Run Installer
+
+**Pure Monochrome (Default):**
 ```bash
 ./install-abyss.sh
 ```
 
+**With Accent Color Variant:**
+```bash
+# Red accent
+./install-abyss.sh --variant crimson
+
+# Blue accent
+./install-abyss.sh --variant cobalt
+
+# Green accent
+./install-abyss.sh --variant emerald
+```
+
+**Show Help:**
+```bash
+./install-abyss.sh --help
+```
+
 The script will:
+- Detect your Plasma version (5 or 6)
 - Check for dependencies
 - Install missing packages via `pacman`
 - Create theme directories
-- Generate ASCII wallpaper
+- Generate ASCII wallpapers (multiple resolutions)
 - Configure Plasma settings
 - Install SDDM theme (requires sudo password)
 
@@ -64,10 +87,47 @@ reboot
 ### 6. Verify Installation
 
 Open System Settings and check:
-- **Appearance → Global Theme**: Abyss should be listed
-- **Appearance → Colors**: Abyss color scheme available
-- **Appearance → Plasma Style**: Abyss theme visible
-- **Workspace Behavior → Splash Screen**: Verify if selected
+- **Appearance -> Global Theme**: Abyss (or variant) should be listed
+- **Appearance -> Colors**: Abyss color scheme available
+- **Appearance -> Plasma Style**: Abyss theme visible
+- **Workspace Behavior -> Splash Screen**: Verify if selected
+
+## Theme Variants
+
+### Available Variants
+
+| Variant | Command | Accent Color |
+|---------|---------|--------------|
+| Pure Monochrome | `./install-abyss.sh` | None (default) |
+| Crimson | `./install-abyss.sh -v crimson` | Deep red (#8b0000) |
+| Cobalt | `./install-abyss.sh -v cobalt` | Deep blue (#0a3d62) |
+| Emerald | `./install-abyss.sh -v emerald` | Deep green (#0a4a0a) |
+
+### Installing Multiple Variants
+
+Each variant installs as a separate theme, so you can install all of them:
+
+```bash
+./install-abyss.sh                    # Pure monochrome
+./install-abyss.sh --variant crimson  # Red variant
+./install-abyss.sh --variant cobalt   # Blue variant
+./install-abyss.sh --variant emerald  # Green variant
+```
+
+Then switch between them in System Settings -> Appearance -> Global Theme.
+
+### Accent Color Locations
+
+Accent colors are applied to:
+- Selection backgrounds
+- Focus indicators
+- Links
+- Active buttons
+- Progress bars
+- Checkboxes and radio buttons
+- SDDM login panel border
+- Splash screen animation
+- Wallpaper theme label
 
 ## Post-Installation
 
@@ -76,8 +136,8 @@ Open System Settings and check:
 If theme doesn't auto-apply:
 
 1. Open System Settings
-2. Navigate to **Appearance → Global Theme**
-3. Select **Abyss**
+2. Navigate to **Appearance -> Global Theme**
+3. Select **Abyss** (or Abyss-Crimson, etc.)
 4. Click **Apply**
 
 ### SDDM Configuration
@@ -99,6 +159,8 @@ sudo mkdir -p /etc/sddm.conf.d
 echo -e "[Theme]\nCurrent=Abyss" | sudo tee /etc/sddm.conf.d/abyss.conf
 ```
 
+For variants, use the variant name (e.g., `Current=Abyss-Crimson`).
+
 ### GTK Theme Enforcement
 
 For stubborn GTK applications:
@@ -108,6 +170,28 @@ echo 'gtk-theme-name="Abyss"' >> ~/.gtkrc-2.0
 
 # Flatpak apps
 flatpak override --user --env=GTK_THEME=Abyss
+```
+
+## Installing Extras
+
+### Konsole Color Scheme
+
+```bash
+cp extras/konsole-profile.colorscheme ~/.local/share/konsole/Abyss.colorscheme
+```
+
+Then in Konsole: Settings -> Edit Current Profile -> Appearance -> Select "Abyss"
+
+### Vim Color Scheme
+
+```bash
+mkdir -p ~/.vim/colors
+cp extras/vim-colorscheme ~/.vim/colors/abyss.vim
+```
+
+Add to your `.vimrc`:
+```vim
+colorscheme abyss
 ```
 
 ## Customization During Installation
@@ -127,13 +211,6 @@ COLOR_WHITE="#ffffff"
 COLOR_GRAY1="#050505"
 COLOR_GRAY2="#0a0a0a"
 COLOR_GRAY3="#111111"
-```
-
-### Change Wallpaper Resolution
-
-Edit the `generate_ascii_wallpaper()` function:
-```bash
-convert -size 2560x1440 xc:black \  # Change resolution here
 ```
 
 ### Modify ASCII Pattern
@@ -172,8 +249,13 @@ For SDDM theme installation, you'll be prompted for sudo password.
 
 Restart Plasma safely:
 ```bash
+# Plasma 5
 kquitapp5 plasmashell
 kstart5 plasmashell
+
+# Plasma 6
+kquitapp6 plasmashell
+kstart6 plasmashell
 ```
 
 ### Script Fails Mid-Installation
@@ -185,48 +267,40 @@ The script is idempotent - simply run it again:
 
 It will skip completed steps and resume.
 
-## Alternative Installation Methods
+### Wallpaper Generation Fails
 
-### Manual Component Installation
+If ASCII wallpaper doesn't generate properly:
 
-Install individual components:
+1. Ensure ImageMagick is installed: `pacman -Qi imagemagick`
+2. Check if a suitable font exists: `fc-list | grep -i mono`
+3. The script will fall back to a plain black wallpaper with theme label
 
-1. **Plasma Theme Only**:
+## Uninstallation
+
+To remove the theme:
+
 ```bash
-   mkdir -p ~/.local/share/plasma/desktoptheme/Abyss
-   # Copy theme files manually
+chmod +x uninstall-abyss.sh
+./uninstall-abyss.sh
 ```
 
-2. **GTK Theme Only**:
-```bash
-   mkdir -p ~/.themes/Abyss/gtk-3.0
-   # Copy GTK CSS files
-```
+Options:
+- `-y` - Skip confirmation
+- `--keep-wallpaper` - Keep wallpaper files
+- `--keep-gtk` - Keep GTK theme
+- `--keep-sddm` - Skip SDDM removal
+- `--no-reset` - Don't reset settings to Breeze
 
-3. **SDDM Only**:
-```bash
-   sudo mkdir -p /usr/share/sddm/themes/Abyss
-   # Copy SDDM theme files
-```
-
-### Portable Installation
-
-For testing without system modifications:
-```bash
-# Run with environment variable
-export ABYSS_PORTABLE=1
-./install-abyss.sh
-```
-
-(Note: This feature would need to be added to the script)
+See [docs/UNINSTALL.md](docs/UNINSTALL.md) for detailed instructions.
 
 ## Next Steps
 
 After successful installation:
 
-1. Read [CONFIGURATION.md](docs/CONFIGURATION.md) for customization
-2. Check [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) if issues arise
-3. Explore extras in `/extras` directory
+1. Read [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for customization
+2. Check [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) if issues arise
+3. Install extras from the `extras/` directory
+4. Try different accent variants
 
 ---
 

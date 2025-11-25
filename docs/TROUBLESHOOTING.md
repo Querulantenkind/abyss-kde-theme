@@ -2,6 +2,23 @@
 
 ## Common Issues and Solutions
 
+### Plasma Version Compatibility
+
+The script auto-detects Plasma 5 or 6. If you have issues:
+
+**Check your Plasma version:**
+```bash
+plasmashell --version
+```
+
+**Commands differ by version:**
+| Task | Plasma 5 | Plasma 6 |
+|------|----------|----------|
+| Config | `kwriteconfig5` | `kwriteconfig6` |
+| Quit Plasma | `kquitapp5 plasmashell` | `kquitapp6 plasmashell` |
+| Start Plasma | `kstart5 plasmashell` | `kstart6 plasmashell` |
+| Apply theme | `lookandfeeltool` | `plasma-apply-lookandfeel` |
+
 ### Installation Issues
 
 #### Dependencies Fail to Install
@@ -381,6 +398,68 @@ cat ~/.local/share/xorg/Xorg.0.log
 journalctl --user -u plasma-kwin_x11 -b
 ```
 
+## Theme Variant Issues
+
+### Accent Colors Not Showing
+
+**Problem**: Installed a variant but colors look like pure monochrome
+
+**Solution 1 - Verify variant was installed:**
+```bash
+ls ~/.local/share/plasma/desktoptheme/
+# Should show Abyss-Crimson, Abyss-Cobalt, or Abyss-Emerald
+```
+
+**Solution 2 - Select the correct theme:**
+1. System Settings -> Appearance -> Global Theme
+2. Make sure you select "Abyss-Crimson" not "Abyss"
+
+**Solution 3 - Reinstall variant:**
+```bash
+./install-abyss.sh --variant crimson
+killall plasmashell && plasmashell &
+```
+
+### Switching Between Variants
+
+**To switch from one variant to another:**
+1. Install the new variant (they coexist)
+2. Select it in System Settings -> Global Theme
+3. Or use command line:
+
+```bash
+# Plasma 5
+lookandfeeltool -a com.github.abyss.crimson
+
+# Plasma 6
+plasma-apply-lookandfeel -a com.github.abyss.crimson
+```
+
+### Removing a Specific Variant
+
+```bash
+# Remove only the Crimson variant
+rm -rf ~/.local/share/plasma/desktoptheme/Abyss-Crimson
+rm -rf ~/.local/share/plasma/look-and-feel/com.github.abyss.crimson
+rm -rf ~/.local/share/color-schemes/Abyss-Crimson.colors
+rm -rf ~/.local/share/wallpapers/Abyss-Crimson
+rm -rf ~/.themes/Abyss-Crimson
+sudo rm -rf /usr/share/sddm/themes/Abyss-Crimson
+```
+
+### GTK Apps Not Using Accent Colors
+
+**Problem**: GTK apps still show gray instead of accent colors
+
+**Solution:**
+```bash
+# Restart the application, or
+killall firefox  # Example
+
+# Or force reload GTK settings
+gsettings set org.gnome.desktop.interface gtk-theme "Abyss-Crimson"
+```
+
 ## Getting Help
 
 If issues persist:
@@ -426,17 +505,28 @@ If applicable
 
 ## Emergency Reset
 
-### Complete Theme Removal
-```bash
-# Remove theme files
-rm -rf ~/.local/share/plasma/desktoptheme/Abyss
-rm -rf ~/.local/share/plasma/look-and-feel/com.github.abyss
-rm -rf ~/.local/share/color-schemes/Abyss.colors
-rm -rf ~/.local/share/wallpapers/Abyss
-rm -rf ~/.themes/Abyss
+### Complete Theme Removal (All Variants)
 
-# Reset to Breeze
+**Recommended: Use the uninstall script:**
+```bash
+./uninstall-abyss.sh -y
+```
+
+**Manual removal:**
+```bash
+# Remove all Abyss theme variants
+rm -rf ~/.local/share/plasma/desktoptheme/Abyss*
+rm -rf ~/.local/share/plasma/look-and-feel/com.github.abyss*
+rm -rf ~/.local/share/color-schemes/Abyss*.colors
+rm -rf ~/.local/share/wallpapers/Abyss*
+rm -rf ~/.themes/Abyss*
+sudo rm -rf /usr/share/sddm/themes/Abyss*
+
+# Reset to Breeze (Plasma 5)
 lookandfeeltool -a org.kde.breeze.desktop
+
+# Reset to Breeze (Plasma 6)
+plasma-apply-lookandfeel -a org.kde.breeze.desktop
 
 # Clear cache
 rm -rf ~/.cache/plasma*
