@@ -1,0 +1,68 @@
+# Abyss Alacritty Color Scheme
+# Pure monochrome theme for Alacritty terminal emulator
+#
+# Installation:
+#   mkdir -p ~/.config/alacritty
+#   cp alacritty.toml ~/.config/alacritty/alacritty.toml
+#
+# Or import as a theme (recommended):
+#   mkdir -p ~/.config/alacritty/themes
+#   cp alacritty.toml ~/.config/alacritty/themes/abyss.toml
+#   Then add to your alacritty.toml:
+#     [general]
+#     import = ["~/.config/alacritty/themes/abyss.toml"]
+
+[colors.primary]
+background = "#000000"
+foreground = "#ffffff"
+
+[colors.cursor]
+text = "#000000"
+cursor = "#ffffff"
+
+[colors.vi_mode_cursor]
+text = "#000000"
+cursor = "#ffffff"
+
+[colors.selection]
+text = "#ffffff"
+background = "#111111"
+
+[colors.search.matches]
+foreground = "#000000"
+background = "#888888"
+
+[colors.search.focused_match]
+foreground = "#000000"
+background = "#ffffff"
+
+[colors.hints.start]
+foreground = "#000000"
+background = "#888888"
+
+[colors.hints.end]
+foreground = "#000000"
+background = "#555555"
+
+# Normal colors (standard 8 ANSI colors)
+[colors.normal]
+black   = "#000000"
+red     = "#aaaaaa"
+green   = "#888888"
+yellow  = "#999999"
+blue    = "#666666"
+magenta = "#777777"
+cyan    = "#888888"
+white   = "#ffffff"
+
+# Bright colors (bold/intense variants)
+[colors.bright]
+black   = "#111111"
+red     = "#ffffff"
+green   = "#cccccc"
+yellow  = "#e6e6e6"
+blue    = "#bbbbbb"
+magenta = "#dddddd"
+cyan    = "#eeeeee"
+white   = "#ffffff"
+
