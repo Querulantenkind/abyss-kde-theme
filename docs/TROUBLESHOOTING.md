@@ -439,7 +439,7 @@ lookandfeeltool -a org.kde.breeze.desktop
 rm -rf ~/.cache/plasma*
 
 # Restart
-killall plasmashell && plasmasheel &
+killall plasmashell && plasmashell &
 ```
 
 See [UNINSTALL.md](UNINSTALL.md) for complete removal procedure.

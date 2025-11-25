@@ -1,0 +1,186 @@
+" Abyss - Pure Monochrome Vim Color Scheme
+" A minimal black and white theme for the disciplined minimalist
+"
+" Installation:
+"   mkdir -p ~/.vim/colors
+"   cp vim-colorscheme ~/.vim/colors/abyss.vim
+"   Then add to your .vimrc: colorscheme abyss
+
+set background=dark
+highlight clear
+
+if exists("syntax_on")
+    syntax reset
+endif
+
+let g:colors_name = "abyss"
+
+" ============================================================================
+" Color Definitions
+" ============================================================================
+" Pure Black:  #000000 (0)
+" Deep Gray 1: #050505 (232)
+" Deep Gray 2: #0a0a0a (233)
+" Deep Gray 3: #111111 (234)
+" Mid Gray:    #555555 (240)
+" Light Gray:  #888888 (245)
+" Pure White:  #ffffff (255)
+
+" ============================================================================
+" Editor Colors
+" ============================================================================
+hi Normal          guifg=#ffffff guibg=#000000 ctermfg=255  ctermbg=0
+hi NonText         guifg=#111111 guibg=#000000 ctermfg=234  ctermbg=0
+hi EndOfBuffer     guifg=#111111 guibg=#000000 ctermfg=234  ctermbg=0
+hi LineNr          guifg=#555555 guibg=#000000 ctermfg=240  ctermbg=0
+hi CursorLineNr    guifg=#ffffff guibg=#0a0a0a ctermfg=255  ctermbg=233
+hi CursorLine      guibg=#0a0a0a ctermbg=233   cterm=NONE   gui=NONE
+hi CursorColumn    guibg=#0a0a0a ctermbg=233
+hi ColorColumn     guibg=#050505 ctermbg=232
+hi SignColumn      guifg=#555555 guibg=#000000 ctermfg=240  ctermbg=0
+hi VertSplit       guifg=#111111 guibg=#000000 ctermfg=234  ctermbg=0
+hi StatusLine      guifg=#ffffff guibg=#111111 ctermfg=255  ctermbg=234 gui=NONE cterm=NONE
+hi StatusLineNC    guifg=#555555 guibg=#050505 ctermfg=240  ctermbg=232 gui=NONE cterm=NONE
+hi TabLine         guifg=#555555 guibg=#050505 ctermfg=240  ctermbg=232 gui=NONE cterm=NONE
+hi TabLineFill     guifg=#111111 guibg=#000000 ctermfg=234  ctermbg=0
+hi TabLineSel      guifg=#ffffff guibg=#111111 ctermfg=255  ctermbg=234 gui=NONE cterm=NONE
+hi Title           guifg=#ffffff guibg=NONE    ctermfg=255  gui=bold    cterm=bold
+hi Folded          guifg=#888888 guibg=#050505 ctermfg=245  ctermbg=232
+hi FoldColumn      guifg=#555555 guibg=#000000 ctermfg=240  ctermbg=0
+
+" ============================================================================
+" Cursor and Selection
+" ============================================================================
+hi Cursor          guifg=#000000 guibg=#ffffff ctermfg=0    ctermbg=255
+hi Visual          guibg=#111111 ctermbg=234
+hi VisualNOS       guibg=#111111 ctermbg=234
+
+" ============================================================================
+" Search and Matches
+" ============================================================================
+hi Search          guifg=#000000 guibg=#ffffff ctermfg=0    ctermbg=255
+hi IncSearch       guifg=#000000 guibg=#888888 ctermfg=0    ctermbg=245
+hi MatchParen      guifg=#ffffff guibg=#555555 ctermfg=255  ctermbg=240 gui=bold cterm=bold
+
+" ============================================================================
+" Messages and Modes
+" ============================================================================
+hi ModeMsg         guifg=#ffffff guibg=NONE    ctermfg=255
+hi MoreMsg         guifg=#888888 guibg=NONE    ctermfg=245
+hi WarningMsg      guifg=#ffffff guibg=#111111 ctermfg=255  ctermbg=234
+hi ErrorMsg        guifg=#ffffff guibg=#0a0a0a ctermfg=255  ctermbg=233
+hi Question        guifg=#888888 guibg=NONE    ctermfg=245
+
+" ============================================================================
+" Popup Menu
+" ============================================================================
+hi Pmenu           guifg=#ffffff guibg=#0a0a0a ctermfg=255  ctermbg=233
+hi PmenuSel        guifg=#000000 guibg=#ffffff ctermfg=0    ctermbg=255
+hi PmenuSbar       guibg=#111111 ctermbg=234
+hi PmenuThumb      guibg=#555555 ctermbg=240
+
+" ============================================================================
+" Diff
+" ============================================================================
+hi DiffAdd         guifg=#ffffff guibg=#050505 ctermfg=255  ctermbg=232
+hi DiffChange      guifg=#888888 guibg=#050505 ctermfg=245  ctermbg=232
+hi DiffDelete      guifg=#555555 guibg=#050505 ctermfg=240  ctermbg=232
+hi DiffText        guifg=#ffffff guibg=#111111 ctermfg=255  ctermbg=234 gui=bold cterm=bold
+
+" ============================================================================
+" Spelling
+" ============================================================================
+hi SpellBad        guifg=#ffffff guibg=NONE    ctermfg=255  gui=underline cterm=underline
+hi SpellCap        guifg=#888888 guibg=NONE    ctermfg=245  gui=underline cterm=underline
+hi SpellLocal      guifg=#888888 guibg=NONE    ctermfg=245  gui=underline cterm=underline
+hi SpellRare       guifg=#555555 guibg=NONE    ctermfg=240  gui=underline cterm=underline
+
+" ============================================================================
+" Syntax Highlighting
+" ============================================================================
+hi Comment         guifg=#555555 guibg=NONE    ctermfg=240  gui=italic cterm=italic
+hi Constant        guifg=#ffffff guibg=NONE    ctermfg=255
+hi String          guifg=#888888 guibg=NONE    ctermfg=245
+hi Character       guifg=#888888 guibg=NONE    ctermfg=245
+hi Number          guifg=#ffffff guibg=NONE    ctermfg=255
+hi Boolean         guifg=#ffffff guibg=NONE    ctermfg=255
+hi Float           guifg=#ffffff guibg=NONE    ctermfg=255
+
+hi Identifier      guifg=#ffffff guibg=NONE    ctermfg=255
+hi Function        guifg=#ffffff guibg=NONE    ctermfg=255  gui=bold cterm=bold
+
+hi Statement       guifg=#ffffff guibg=NONE    ctermfg=255  gui=bold cterm=bold
+hi Conditional     guifg=#ffffff guibg=NONE    ctermfg=255  gui=bold cterm=bold
+hi Repeat          guifg=#ffffff guibg=NONE    ctermfg=255  gui=bold cterm=bold
+hi Label           guifg=#ffffff guibg=NONE    ctermfg=255
+hi Operator        guifg=#888888 guibg=NONE    ctermfg=245
+hi Keyword         guifg=#ffffff guibg=NONE    ctermfg=255  gui=bold cterm=bold
+hi Exception       guifg=#ffffff guibg=NONE    ctermfg=255  gui=bold cterm=bold
+
+hi PreProc         guifg=#888888 guibg=NONE    ctermfg=245
+hi Include         guifg=#888888 guibg=NONE    ctermfg=245
+hi Define          guifg=#888888 guibg=NONE    ctermfg=245
+hi Macro           guifg=#888888 guibg=NONE    ctermfg=245
+hi PreCondit       guifg=#888888 guibg=NONE    ctermfg=245
+
+hi Type            guifg=#ffffff guibg=NONE    ctermfg=255
+hi StorageClass    guifg=#ffffff guibg=NONE    ctermfg=255
+hi Structure       guifg=#ffffff guibg=NONE    ctermfg=255
+hi Typedef         guifg=#ffffff guibg=NONE    ctermfg=255
+
+hi Special         guifg=#888888 guibg=NONE    ctermfg=245
+hi SpecialChar     guifg=#888888 guibg=NONE    ctermfg=245
+hi Tag             guifg=#ffffff guibg=NONE    ctermfg=255
+hi Delimiter       guifg=#555555 guibg=NONE    ctermfg=240
+hi SpecialComment  guifg=#555555 guibg=NONE    ctermfg=240  gui=italic cterm=italic
+hi Debug           guifg=#888888 guibg=NONE    ctermfg=245
+
+hi Underlined      guifg=#ffffff guibg=NONE    ctermfg=255  gui=underline cterm=underline
+hi Ignore          guifg=#111111 guibg=NONE    ctermfg=234
+hi Error           guifg=#ffffff guibg=#111111 ctermfg=255  ctermbg=234
+hi Todo            guifg=#000000 guibg=#ffffff ctermfg=0    ctermbg=255 gui=bold cterm=bold
+
+" ============================================================================
+" Language-Specific Overrides
+" ============================================================================
+" HTML
+hi htmlTag         guifg=#555555 ctermfg=240
+hi htmlEndTag      guifg=#555555 ctermfg=240
+hi htmlTagName     guifg=#ffffff ctermfg=255 gui=bold cterm=bold
+hi htmlArg         guifg=#888888 ctermfg=245
+
+" CSS
+hi cssClassName    guifg=#ffffff ctermfg=255
+hi cssIdentifier   guifg=#ffffff ctermfg=255
+hi cssBraces       guifg=#555555 ctermfg=240
+
+" JavaScript
+hi javaScriptBraces guifg=#555555 ctermfg=240
+
+" Markdown
+hi markdownH1      guifg=#ffffff ctermfg=255 gui=bold cterm=bold
+hi markdownH2      guifg=#ffffff ctermfg=255 gui=bold cterm=bold
+hi markdownH3      guifg=#ffffff ctermfg=255 gui=bold cterm=bold
+hi markdownCode    guifg=#888888 ctermfg=245
+hi markdownCodeBlock guifg=#888888 ctermfg=245
+hi markdownUrl     guifg=#555555 ctermfg=240
+
+" ============================================================================
+" Plugin Support
+" ============================================================================
+" NERDTree
+hi NERDTreeDir     guifg=#ffffff ctermfg=255 gui=bold cterm=bold
+hi NERDTreeFile    guifg=#888888 ctermfg=245
+hi NERDTreeExecFile guifg=#ffffff ctermfg=255
+
+" GitGutter
+hi GitGutterAdd    guifg=#888888 guibg=#000000 ctermfg=245 ctermbg=0
+hi GitGutterChange guifg=#555555 guibg=#000000 ctermfg=240 ctermbg=0
+hi GitGutterDelete guifg=#ffffff guibg=#000000 ctermfg=255 ctermbg=0
+
+" ALE
+hi ALEError        guifg=#ffffff guibg=NONE ctermfg=255 gui=underline cterm=underline
+hi ALEWarning      guifg=#888888 guibg=NONE ctermfg=245 gui=underline cterm=underline
+hi ALEErrorSign    guifg=#ffffff guibg=#000000 ctermfg=255 ctermbg=0
+hi ALEWarningSign  guifg=#888888 guibg=#000000 ctermfg=245 ctermbg=0
+

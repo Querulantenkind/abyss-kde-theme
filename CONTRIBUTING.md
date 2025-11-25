@@ -215,29 +215,3 @@ Open an issue with the `question` label or discuss in existing issues.
 ---
 
 **Thank you for contributing to the void.**
-```
-
-### .gitignore
-```
-# Script-generated files (for testing)
-*.log
-*.tmp
-
-# OS Files
-.DS_Store
-Thumbs.db
-
-# Editor files
-*.swp
-*.swo
-*~
-.vscode/
-.idea/
-
-# Test directories
-test/
-tmp/
-
-# Personal notes
-notes/
-TODO.md

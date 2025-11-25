@@ -40,6 +40,35 @@ error() {
     exit 1
 }
 
+# Convert hex color to RGB decimal format (required by KDE color schemes)
+hex_to_rgb() {
+    local hex="${1#\#}"
+    printf "%d,%d,%d" "0x${hex:0:2}" "0x${hex:2:2}" "0x${hex:4:2}"
+}
+
+# Detect Plasma version and set appropriate command names
+detect_plasma_version() {
+    if command -v kwriteconfig6 &>/dev/null; then
+        KWRITECONFIG="kwriteconfig6"
+        KREADCONFIG="kreadconfig6"
+        PLASMA_VERSION=6
+    else
+        KWRITECONFIG="kwriteconfig5"
+        KREADCONFIG="kreadconfig5"
+        PLASMA_VERSION=5
+    fi
+    
+    if command -v lookandfeeltool &>/dev/null; then
+        LOOKANDFEELTOOL="lookandfeeltool"
+    elif command -v plasma-apply-lookandfeel &>/dev/null; then
+        LOOKANDFEELTOOL="plasma-apply-lookandfeel"
+    else
+        LOOKANDFEELTOOL=""
+    fi
+    
+    log "Detected Plasma version: $PLASMA_VERSION"
+}
+
 check_root() {
     if [[ $EUID -eq 0 ]]; then
         error "Do not run this script as root. SDDM installation will use sudo when needed."
@@ -90,7 +119,8 @@ create_directory_structure() {
 generate_ascii_wallpaper() {
     log "Generating ASCII wallpaper with geometric structures..."
     
-    local wallpaper_path="$WALLPAPER_DIR/contents/images/1920x1080.png"
+    # Resolutions to generate
+    local resolutions=("1920x1080" "2560x1440" "3840x2160" "1366x768")
     
     # Create ASCII art pattern
     cat > /tmp/abyss_ascii.txt << 'EOF'
@@ -119,13 +149,38 @@ generate_ascii_wallpaper() {
         ╚════════════════════════════════════════════════════════════════╝
 EOF
     
-    # Convert ASCII to image with ImageMagick
-    convert -size 1920x1080 xc:black \
-        -font "DejaVu-Sans-Mono" \
-        -pointsize 12 \
-        -fill white \
-        -annotate +100+100 "@/tmp/abyss_ascii.txt" \
-        "$wallpaper_path"
+    # Detect available font (fallback to any monospace if DejaVu not available)
+    local font="DejaVu-Sans-Mono"
+    if ! convert -list font 2>/dev/null | grep -qi "dejavu"; then
+        font="Monospace"
+        log "DejaVu font not found, using fallback: $font"
+    fi
+    
+    # Generate wallpapers for each resolution
+    for res in "${resolutions[@]}"; do
+        local wallpaper_path="$WALLPAPER_DIR/contents/images/${res}.png"
+        local width="${res%x*}"
+        local height="${res#*x}"
+        
+        # Scale pointsize based on resolution
+        local pointsize=$((12 * width / 1920))
+        local offset_x=$((100 * width / 1920))
+        local offset_y=$((100 * height / 1080))
+        
+        log "Generating ${res} wallpaper..."
+        if convert -size "$res" xc:black \
+            -font "$font" \
+            -pointsize "$pointsize" \
+            -fill white \
+            -annotate "+${offset_x}+${offset_y}" "@/tmp/abyss_ascii.txt" \
+            "$wallpaper_path" 2>/dev/null; then
+            log "  Created: $wallpaper_path"
+        else
+            # Fallback: create simple black image if ASCII rendering fails
+            log "  Warning: ASCII rendering failed, creating solid black wallpaper"
+            convert -size "$res" xc:black "$wallpaper_path"
+        fi
+    done
     
     # Create metadata
     cat > "$WALLPAPER_DIR/metadata.json" << EOF
@@ -144,7 +199,7 @@ EOF
 EOF
     
     rm -f /tmp/abyss_ascii.txt
-    log "Wallpaper generated at $wallpaper_path"
+    log "Wallpapers generated for resolutions: ${resolutions[*]}"
 }
 
 create_plasma_theme() {
@@ -265,8 +320,14 @@ EOF
     mkdir -p "$THEME_DIR/widgets"
     cat > "$THEME_DIR/widgets/panel-background.svg" << 'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="100" height="100">
-    <rect width="100" height="100" fill="#000000" opacity="0.95"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+    <defs>
+        <style type="text/css">
+            .ColorScheme-Background { fill: #000000; }
+        </style>
+    </defs>
+    <rect id="shadow" width="100" height="100" fill="#000000" opacity="0"/>
+    <rect id="center" width="100" height="100" class="ColorScheme-Background" opacity="0.95"/>
 </svg>
 EOF
 
@@ -276,9 +337,17 @@ EOF
 create_color_scheme() {
     log "Creating KDE color scheme..."
     
+    # Convert hex colors to RGB format (required by KDE)
+    local RGB_BLACK RGB_WHITE RGB_GRAY1 RGB_GRAY2 RGB_GRAY3
+    RGB_BLACK=$(hex_to_rgb "$COLOR_BLACK")
+    RGB_WHITE=$(hex_to_rgb "$COLOR_WHITE")
+    RGB_GRAY1=$(hex_to_rgb "$COLOR_GRAY1")
+    RGB_GRAY2=$(hex_to_rgb "$COLOR_GRAY2")
+    RGB_GRAY3=$(hex_to_rgb "$COLOR_GRAY3")
+    
     cat > "$HOME/.local/share/color-schemes/$THEME_NAME.colors" << EOF
 [ColorEffects:Disabled]
-Color=$COLOR_GRAY1
+Color=$RGB_GRAY1
 ColorAmount=0
 ColorEffect=0
 ContrastAmount=0.65
@@ -288,7 +357,7 @@ IntensityEffect=2
 
 [ColorEffects:Inactive]
 ChangeSelectionColor=true
-Color=$COLOR_GRAY2
+Color=$RGB_GRAY2
 ColorAmount=0.025
 ColorEffect=2
 ContrastAmount=0.1
@@ -298,88 +367,88 @@ IntensityAmount=0
 IntensityEffect=0
 
 [Colors:Button]
-BackgroundAlternate=$COLOR_GRAY3
-BackgroundNormal=$COLOR_GRAY2
-DecorationFocus=$COLOR_GRAY3
-DecorationHover=$COLOR_GRAY2
-ForegroundActive=$COLOR_WHITE
-ForegroundInactive=$COLOR_GRAY3
-ForegroundLink=$COLOR_WHITE
-ForegroundNegative=$COLOR_WHITE
-ForegroundNeutral=$COLOR_WHITE
-ForegroundNormal=$COLOR_WHITE
-ForegroundPositive=$COLOR_WHITE
-ForegroundVisited=$COLOR_GRAY3
+BackgroundAlternate=$RGB_GRAY3
+BackgroundNormal=$RGB_GRAY2
+DecorationFocus=$RGB_GRAY3
+DecorationHover=$RGB_GRAY2
+ForegroundActive=$RGB_WHITE
+ForegroundInactive=$RGB_GRAY3
+ForegroundLink=$RGB_WHITE
+ForegroundNegative=$RGB_WHITE
+ForegroundNeutral=$RGB_WHITE
+ForegroundNormal=$RGB_WHITE
+ForegroundPositive=$RGB_WHITE
+ForegroundVisited=$RGB_GRAY3
 
 [Colors:Complementary]
-BackgroundAlternate=$COLOR_GRAY1
-BackgroundNormal=$COLOR_BLACK
-DecorationFocus=$COLOR_GRAY3
-DecorationHover=$COLOR_GRAY2
-ForegroundActive=$COLOR_WHITE
-ForegroundInactive=$COLOR_GRAY3
-ForegroundLink=$COLOR_WHITE
-ForegroundNegative=$COLOR_WHITE
-ForegroundNeutral=$COLOR_WHITE
-ForegroundNormal=$COLOR_WHITE
-ForegroundPositive=$COLOR_WHITE
-ForegroundVisited=$COLOR_GRAY3
+BackgroundAlternate=$RGB_GRAY1
+BackgroundNormal=$RGB_BLACK
+DecorationFocus=$RGB_GRAY3
+DecorationHover=$RGB_GRAY2
+ForegroundActive=$RGB_WHITE
+ForegroundInactive=$RGB_GRAY3
+ForegroundLink=$RGB_WHITE
+ForegroundNegative=$RGB_WHITE
+ForegroundNeutral=$RGB_WHITE
+ForegroundNormal=$RGB_WHITE
+ForegroundPositive=$RGB_WHITE
+ForegroundVisited=$RGB_GRAY3
 
 [Colors:Selection]
-BackgroundAlternate=$COLOR_GRAY2
-BackgroundNormal=$COLOR_GRAY3
-DecorationFocus=$COLOR_GRAY3
-DecorationHover=$COLOR_GRAY2
-ForegroundActive=$COLOR_WHITE
-ForegroundInactive=$COLOR_GRAY3
-ForegroundLink=$COLOR_WHITE
-ForegroundNegative=$COLOR_WHITE
-ForegroundNeutral=$COLOR_WHITE
-ForegroundNormal=$COLOR_WHITE
-ForegroundPositive=$COLOR_WHITE
-ForegroundVisited=$COLOR_GRAY3
+BackgroundAlternate=$RGB_GRAY2
+BackgroundNormal=$RGB_GRAY3
+DecorationFocus=$RGB_GRAY3
+DecorationHover=$RGB_GRAY2
+ForegroundActive=$RGB_WHITE
+ForegroundInactive=$RGB_GRAY3
+ForegroundLink=$RGB_WHITE
+ForegroundNegative=$RGB_WHITE
+ForegroundNeutral=$RGB_WHITE
+ForegroundNormal=$RGB_WHITE
+ForegroundPositive=$RGB_WHITE
+ForegroundVisited=$RGB_GRAY3
 
 [Colors:Tooltip]
-BackgroundAlternate=$COLOR_GRAY1
-BackgroundNormal=$COLOR_BLACK
-DecorationFocus=$COLOR_GRAY3
-DecorationHover=$COLOR_GRAY2
-ForegroundActive=$COLOR_WHITE
-ForegroundInactive=$COLOR_GRAY3
-ForegroundLink=$COLOR_WHITE
-ForegroundNegative=$COLOR_WHITE
-ForegroundNeutral=$COLOR_WHITE
-ForegroundNormal=$COLOR_WHITE
-ForegroundPositive=$COLOR_WHITE
-ForegroundVisited=$COLOR_GRAY3
+BackgroundAlternate=$RGB_GRAY1
+BackgroundNormal=$RGB_BLACK
+DecorationFocus=$RGB_GRAY3
+DecorationHover=$RGB_GRAY2
+ForegroundActive=$RGB_WHITE
+ForegroundInactive=$RGB_GRAY3
+ForegroundLink=$RGB_WHITE
+ForegroundNegative=$RGB_WHITE
+ForegroundNeutral=$RGB_WHITE
+ForegroundNormal=$RGB_WHITE
+ForegroundPositive=$RGB_WHITE
+ForegroundVisited=$RGB_GRAY3
 
 [Colors:View]
-BackgroundAlternate=$COLOR_GRAY1
-BackgroundNormal=$COLOR_BLACK
-DecorationFocus=$COLOR_GRAY3
-DecorationHover=$COLOR_GRAY2
-ForegroundActive=$COLOR_WHITE
-ForegroundInactive=$COLOR_GRAY3
-ForegroundLink=$COLOR_WHITE
-ForegroundNegative=$COLOR_WHITE
-ForegroundNeutral=$COLOR_WHITE
-ForegroundNormal=$COLOR_WHITE
-ForegroundPositive=$COLOR_WHITE
-ForegroundVisited=$COLOR_GRAY3
+BackgroundAlternate=$RGB_GRAY1
+BackgroundNormal=$RGB_BLACK
+DecorationFocus=$RGB_GRAY3
+DecorationHover=$RGB_GRAY2
+ForegroundActive=$RGB_WHITE
+ForegroundInactive=$RGB_GRAY3
+ForegroundLink=$RGB_WHITE
+ForegroundNegative=$RGB_WHITE
+ForegroundNeutral=$RGB_WHITE
+ForegroundNormal=$RGB_WHITE
+ForegroundPositive=$RGB_WHITE
+ForegroundVisited=$RGB_GRAY3
 
 [Colors:Window]
-BackgroundAlternate=$COLOR_GRAY1
-BackgroundNormal=$COLOR_BLACK
-DecorationFocus=$COLOR_GRAY3
-DecorationHover=$COLOR_GRAY2
-ForegroundActive=$COLOR_WHITE
-ForegroundInactive=$COLOR_GRAY3
-ForegroundLink=$COLOR_WHITE
-ForegroundNegative=$COLOR_WHITE
-ForegroundNeutral=$COLOR_WHITE
-ForegroundNormal=$COLOR_WHITE
-ForegroundPositive=$COLOR_WHITE
-ForegroundVisited=$COLOR_GRAY3
+BackgroundAlternate=$RGB_GRAY1
+BackgroundNormal=$RGB_BLACK
+DecorationFocus=$RGB_GRAY3
+DecorationHover=$RGB_GRAY2
+ForegroundActive=$RGB_WHITE
+ForegroundInactive=$RGB_GRAY3
+ForegroundLink=$RGB_WHITE
+ForegroundNegative=$RGB_WHITE
+ForegroundNeutral=$RGB_WHITE
+ForegroundNormal=$RGB_WHITE
+ForegroundPositive=$RGB_WHITE
+ForegroundVisited=$RGB_GRAY3
 
 [General]
 ColorScheme=$THEME_NAME
@@ -390,12 +459,12 @@ shadeSortColumn=true
 contrast=4
 
 [WM]
-activeBackground=$COLOR_BLACK
-activeBlend=$COLOR_GRAY3
-activeForeground=$COLOR_WHITE
-inactiveBackground=$COLOR_BLACK
-inactiveBlend=$COLOR_GRAY1
-inactiveForeground=$COLOR_GRAY3
+activeBackground=$RGB_BLACK
+activeBlend=$RGB_GRAY3
+activeForeground=$RGB_WHITE
+inactiveBackground=$RGB_BLACK
+inactiveBlend=$RGB_GRAY1
+inactiveForeground=$RGB_GRAY3
 EOF
 
     log "Color scheme created"
@@ -538,6 +607,10 @@ EOF
 
     # GTK4
     cp "$GTK3_DIR/gtk-3.0/gtk.css" "$GTK3_DIR/gtk-4.0/gtk.css"
+    
+    # Create GTK config directories if they don't exist
+    mkdir -p "$HOME/.config/gtk-3.0"
+    mkdir -p "$HOME/.config/gtk-4.0"
     
     # GTK settings
     cat > "$HOME/.config/gtk-3.0/settings.ini" << EOF
@@ -693,6 +766,7 @@ import QtQuick 2.0
 import SddmComponents 2.0
 
 Rectangle {
+    id: root
     width: 1920
     height: 1080
     color: "#000000"
@@ -719,14 +793,14 @@ Rectangle {
         id: loginPanel
         anchors.centerIn: parent
         width: 400
-        height: 200
+        height: 280
         color: "#0a0a0a"
         border.color: "#111111"
         border.width: 2
 
         Column {
             anchors.centerIn: parent
-            spacing: 20
+            spacing: 15
 
             Text {
                 text: "ABYSS"
@@ -748,7 +822,7 @@ Rectangle {
                 font.family: "Monospace"
                 font.pointSize: 12
                 text: userModel.lastUser
-                KeyNavigation.backtab: password
+                KeyNavigation.backtab: session
                 KeyNavigation.tab: password
             }
 
@@ -764,7 +838,7 @@ Rectangle {
                 font.family: "Monospace"
                 font.pointSize: 12
                 KeyNavigation.backtab: userName
-                KeyNavigation.tab: loginButton
+                KeyNavigation.tab: session
                 
                 Keys.onPressed: {
                     if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
@@ -772,6 +846,24 @@ Rectangle {
                         event.accepted = true
                     }
                 }
+            }
+
+            ComboBox {
+                id: session
+                width: 300
+                height: 30
+                color: "#111111"
+                borderColor: "#111111"
+                focusColor: "#ffffff"
+                hoverColor: "#0a0a0a"
+                textColor: "#ffffff"
+                font.family: "Monospace"
+                font.pointSize: 10
+                model: sessionModel
+                index: sessionModel.lastIndex
+                arrowColor: "#ffffff"
+                KeyNavigation.backtab: password
+                KeyNavigation.tab: loginButton
             }
 
             Button {
@@ -785,7 +877,7 @@ Rectangle {
                 font.family: "Monospace"
                 font.pointSize: 12
                 onClicked: sddm.login(userName.text, password.text, session.index)
-                KeyNavigation.backtab: password
+                KeyNavigation.backtab: session
                 KeyNavigation.tab: userName
             }
         }
@@ -800,8 +892,15 @@ Rectangle {
 }
 EOF
 
-    # Copy wallpaper to SDDM theme
-    sudo cp "$WALLPAPER_DIR/contents/images/1920x1080.png" "$SDDM_THEME_DIR/background.png"
+    # Copy wallpaper to SDDM theme (with existence check)
+    local wallpaper_source="$WALLPAPER_DIR/contents/images/1920x1080.png"
+    if [[ -f "$wallpaper_source" ]]; then
+        sudo cp "$wallpaper_source" "$SDDM_THEME_DIR/background.png"
+    else
+        log "Warning: Wallpaper not found at $wallpaper_source, creating solid black background"
+        # Create a simple black background as fallback
+        sudo convert -size 1920x1080 xc:black "$SDDM_THEME_DIR/background.png"
+    fi
     
     # theme.conf
     sudo tee "$SDDM_THEME_DIR/theme.conf" > /dev/null << EOF
@@ -844,33 +943,42 @@ EOF
 apply_plasma_settings() {
     log "Applying Plasma settings..."
     
-    # Set global theme
-    lookandfeeltool -a com.github.abyss 2>/dev/null || true
+    # Set global theme using detected tool
+    if [[ -n "$LOOKANDFEELTOOL" ]]; then
+        if [[ "$LOOKANDFEELTOOL" == "plasma-apply-lookandfeel" ]]; then
+            $LOOKANDFEELTOOL -a com.github.abyss 2>/dev/null || true
+        else
+            $LOOKANDFEELTOOL -a com.github.abyss 2>/dev/null || true
+        fi
+    fi
     
     # Apply color scheme
-    kwriteconfig5 --file kdeglobals --group General --key ColorScheme "$THEME_NAME"
+    $KWRITECONFIG --file kdeglobals --group General --key ColorScheme "$THEME_NAME"
     
     # Set plasma theme
-    kwriteconfig5 --file plasmarc --group Theme --key name "$THEME_NAME"
+    $KWRITECONFIG --file plasmarc --group Theme --key name "$THEME_NAME"
     
-    # Set wallpaper
-    kwriteconfig5 --file plasma-org.kde.plasma.desktop-appletsrc \
-        --group Containments --group 1 --group Wallpaper \
-        --group org.kde.image --group General \
-        --key Image "file://$WALLPAPER_DIR/contents/images/1920x1080.png"
+    # Set wallpaper (use first available resolution)
+    local wallpaper_file="$WALLPAPER_DIR/contents/images/1920x1080.png"
+    if [[ -f "$wallpaper_file" ]]; then
+        $KWRITECONFIG --file plasma-org.kde.plasma.desktop-appletsrc \
+            --group Containments --group 1 --group Wallpaper \
+            --group org.kde.image --group General \
+            --key Image "file://$wallpaper_file"
+    fi
     
     # Dark theme preference
-    kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage com.github.abyss
+    $KWRITECONFIG --file kdeglobals --group KDE --key LookAndFeelPackage com.github.abyss
     
     # Window decorations
-    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key library org.kde.breeze
-    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme Breeze
+    $KWRITECONFIG --file kwinrc --group org.kde.kdecoration2 --key library org.kde.breeze
+    $KWRITECONFIG --file kwinrc --group org.kde.kdecoration2 --key theme Breeze
     
     # Icon theme
-    kwriteconfig5 --file kdeglobals --group Icons --key Theme breeze-dark
+    $KWRITECONFIG --file kdeglobals --group Icons --key Theme breeze-dark
     
     # Cursor theme
-    kwriteconfig5 --file kcminputrc --group Mouse --key cursorTheme breeze_cursors
+    $KWRITECONFIG --file kcminputrc --group Mouse --key cursorTheme breeze_cursors
     
     log "Plasma settings applied. Restart Plasma for full effect: killall plasmashell && plasmashell &"
 }
@@ -883,6 +991,7 @@ main() {
     log "Starting $THEME_NAME installation..."
     
     check_root
+    detect_plasma_version
     install_dependencies
     create_directory_structure
     generate_ascii_wallpaper

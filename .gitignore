@@ -1,14 +1,25 @@
-*.tar
-*.tar.*
-*.jar
-*.exe
-*.msi
-*.deb
-*.zip
-*.tgz
+# Script-generated files (for testing)
 *.log
-*.log.*
-*.sig
+*.tmp
 
-pkg/
-src/
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Test directories
+test/
+tmp/
+
+# Personal notes
+notes/
+TODO.md
+
+# Build artifacts
+*.bak

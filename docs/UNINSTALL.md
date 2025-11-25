@@ -2,9 +2,34 @@
 
 ## Quick Uninstall
 
-### Automated Removal (Coming Soon)
+### Automated Removal
 
-An uninstall script is planned for future releases.
+Use the provided uninstall script for easy removal:
+
+```bash
+./uninstall-abyss.sh
+```
+
+#### Uninstall Options
+
+```bash
+# Interactive uninstall (default)
+./uninstall-abyss.sh
+
+# Skip confirmation prompts
+./uninstall-abyss.sh -y
+
+# Keep specific components
+./uninstall-abyss.sh --keep-wallpaper
+./uninstall-abyss.sh --keep-gtk
+./uninstall-abyss.sh --keep-sddm
+
+# Don't reset settings to Breeze
+./uninstall-abyss.sh --no-reset
+
+# Show help
+./uninstall-abyss.sh --help
+```
 
 ### Manual Removal
 
