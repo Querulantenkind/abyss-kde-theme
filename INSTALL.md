@@ -151,7 +151,12 @@ EOF
 
 **Manual installation:**
 ```bash
-sudo pacman -S imagemagick qt5-graphicaleffects qt5-quickcontrols qt5-quickcontrols2 gtk-engine-murrine gtk-engines breeze breeze-gtk
+sudo pacman -S imagemagick qt5-graphicaleffects qt5-quickcontrols qt5-quickcontrols2 breeze breeze-gtk
+```
+
+**Optional GTK2 support (from AUR):**
+```bash
+yay -S gtk-engine-murrine
 ```
 
 ### Permission Denied Errors

@@ -37,8 +37,9 @@ A pure monochrome KDE Plasma theme that transforms your desktop into a mysteriou
 The script will automatically install required packages:
 - `imagemagick` - Wallpaper generation
 - `qt5-graphicaleffects` / `qt5-quickcontrols` / `qt5-quickcontrols2`
-- `gtk-engine-murrine` / `gtk-engines`
 - `breeze` / `breeze-gtk`
+
+**Optional (for GTK2 apps):** `gtk-engine-murrine` - available in AUR: `yay -S gtk-engine-murrine`
 
 ## Installation
 

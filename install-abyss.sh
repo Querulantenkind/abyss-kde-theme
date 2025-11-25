@@ -83,11 +83,12 @@ install_dependencies() {
         "qt5-graphicaleffects"
         "qt5-quickcontrols"
         "qt5-quickcontrols2"
-        "gtk-engine-murrine"
-        "gtk-engines"
         "breeze"
         "breeze-gtk"
     )
+    
+    # Optional GTK2 packages (available in AUR, not in official repos)
+    # Install manually if needed: yay -S gtk-engine-murrine
     
     local missing=()
     for pkg in "${packages[@]}"; do

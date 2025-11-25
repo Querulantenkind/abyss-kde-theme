@@ -14,7 +14,10 @@
 sudo pacman -Syu
 
 # Manually install dependencies
-sudo pacman -S imagemagick qt5-graphicaleffects qt5-quickcontrols qt5-quickcontrols2 gtk-engine-murrine gtk-engines breeze breeze-gtk
+sudo pacman -S imagemagick qt5-graphicaleffects qt5-quickcontrols qt5-quickcontrols2 breeze breeze-gtk
+
+# Optional: GTK2 theming support (from AUR)
+yay -S gtk-engine-murrine
 
 # Run script again
 ./install-abyss.sh
