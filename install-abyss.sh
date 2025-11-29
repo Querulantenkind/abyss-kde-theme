@@ -19,6 +19,9 @@ GTK2_DIR="$HOME/.themes/$THEME_NAME"
 GTK3_DIR="$HOME/.themes/$THEME_NAME"
 WALLPAPER_DIR="$HOME/.local/share/wallpapers/$THEME_NAME"
 SPLASH_DIR="$HOME/.local/share/plasma/look-and-feel/com.github.abyss/contents/splash"
+KVANTUM_DIR="$HOME/.config/Kvantum/$THEME_NAME"
+AURORAE_DIR="$HOME/.local/share/aurorae/themes/$THEME_NAME"
+PLYMOUTH_THEME_DIR="/usr/share/plymouth/themes/$THEME_NAME"
 
 # Color palette (base monochrome)
 COLOR_BLACK="#000000"
@@ -87,6 +90,9 @@ set_variant_colors() {
     GTK3_DIR="$HOME/.themes/$THEME_NAME"
     WALLPAPER_DIR="$HOME/.local/share/wallpapers/$THEME_NAME"
     SPLASH_DIR="$LOOKFEEL_DIR/contents/splash"
+    KVANTUM_DIR="$HOME/.config/Kvantum/$THEME_NAME"
+    AURORAE_DIR="$HOME/.local/share/aurorae/themes/$THEME_NAME"
+    PLYMOUTH_THEME_DIR="/usr/share/plymouth/themes/$THEME_NAME"
 }
 
 show_help() {
@@ -195,6 +201,13 @@ install_dependencies() {
         "qt5-quickcontrols2"
         "breeze"
         "breeze-gtk"
+        "kvantum"
+        "bc"
+    )
+    
+    # Optional packages (plymouth may not be in official repos)
+    local optional_packages=(
+        "plymouth"
     )
     
     # Optional GTK2 packages (available in AUR, not in official repos)
@@ -213,6 +226,13 @@ install_dependencies() {
     else
         log "All dependencies already installed."
     fi
+    
+    # Check optional packages
+    for pkg in "${optional_packages[@]}"; do
+        if ! pacman -Qi "$pkg" &>/dev/null; then
+            log "Optional package not installed: $pkg (Plymouth boot theme may not work)"
+        fi
+    done
 }
 
 create_directory_structure() {
@@ -225,6 +245,9 @@ create_directory_structure() {
     mkdir -p "$WALLPAPER_DIR"/contents/images
     mkdir -p "$HOME/.local/share/color-schemes"
     mkdir -p "$HOME/.local/share/aurorae/themes"
+    mkdir -p "$HOME/.config/Kvantum"
+    mkdir -p "$KVANTUM_DIR"
+    mkdir -p "$AURORAE_DIR"
 }
 
 generate_ascii_wallpaper() {
@@ -833,6 +856,1176 @@ EOF
     log "GTK themes created"
 }
 
+create_kvantum_theme() {
+    log "Creating Kvantum theme..."
+    
+    mkdir -p "$KVANTUM_DIR"
+    
+    # Create the Kvantum SVG file with all UI elements
+    cat > "$KVANTUM_DIR/$THEME_NAME.svg" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640" viewBox="0 0 640 640">
+  <defs>
+    <linearGradient id="button-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:$COLOR_GRAY2"/>
+      <stop offset="100%" style="stop-color:$COLOR_GRAY1"/>
+    </linearGradient>
+    <linearGradient id="button-hover-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:$COLOR_ACCENT_DIM"/>
+      <stop offset="100%" style="stop-color:$COLOR_ACCENT"/>
+    </linearGradient>
+    <linearGradient id="button-pressed-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:$COLOR_ACCENT"/>
+      <stop offset="100%" style="stop-color:$COLOR_ACCENT_DIM"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- PushButton normal -->
+  <g id="button-normal">
+    <rect x="0" y="0" width="100" height="30" rx="2" fill="url(#button-gradient)" stroke="$COLOR_GRAY3" stroke-width="1"/>
+  </g>
+  
+  <!-- PushButton hover -->
+  <g id="button-hover">
+    <rect x="0" y="40" width="100" height="30" rx="2" fill="url(#button-hover-gradient)" stroke="$COLOR_ACCENT" stroke-width="1"/>
+  </g>
+  
+  <!-- PushButton pressed -->
+  <g id="button-pressed">
+    <rect x="0" y="80" width="100" height="30" rx="2" fill="url(#button-pressed-gradient)" stroke="$COLOR_ACCENT_BRIGHT" stroke-width="1"/>
+  </g>
+  
+  <!-- PushButton disabled -->
+  <g id="button-disabled">
+    <rect x="0" y="120" width="100" height="30" rx="2" fill="$COLOR_GRAY1" stroke="$COLOR_GRAY2" stroke-width="1" opacity="0.5"/>
+  </g>
+  
+  <!-- LineEdit normal -->
+  <g id="lineedit-normal">
+    <rect x="110" y="0" width="100" height="26" rx="2" fill="$COLOR_BLACK" stroke="$COLOR_GRAY3" stroke-width="1"/>
+  </g>
+  
+  <!-- LineEdit focused -->
+  <g id="lineedit-focused">
+    <rect x="110" y="30" width="100" height="26" rx="2" fill="$COLOR_BLACK" stroke="$COLOR_ACCENT" stroke-width="2"/>
+  </g>
+  
+  <!-- ComboBox normal -->
+  <g id="combobox-normal">
+    <rect x="220" y="0" width="100" height="26" rx="2" fill="$COLOR_GRAY2" stroke="$COLOR_GRAY3" stroke-width="1"/>
+  </g>
+  
+  <!-- ComboBox hover -->
+  <g id="combobox-hover">
+    <rect x="220" y="30" width="100" height="26" rx="2" fill="$COLOR_GRAY2" stroke="$COLOR_ACCENT" stroke-width="1"/>
+  </g>
+  
+  <!-- Scrollbar groove -->
+  <g id="scrollbar-groove">
+    <rect x="330" y="0" width="12" height="100" rx="6" fill="$COLOR_GRAY1"/>
+  </g>
+  
+  <!-- Scrollbar slider -->
+  <g id="scrollbar-slider">
+    <rect x="350" y="0" width="12" height="40" rx="6" fill="$COLOR_GRAY3"/>
+  </g>
+  
+  <!-- Scrollbar slider hover -->
+  <g id="scrollbar-slider-hover">
+    <rect x="370" y="0" width="12" height="40" rx="6" fill="$COLOR_ACCENT"/>
+  </g>
+  
+  <!-- Tab normal -->
+  <g id="tab-normal">
+    <rect x="0" y="160" width="80" height="30" rx="2" fill="$COLOR_GRAY1" stroke="$COLOR_GRAY3" stroke-width="1"/>
+  </g>
+  
+  <!-- Tab active -->
+  <g id="tab-active">
+    <rect x="90" y="160" width="80" height="30" rx="2" fill="$COLOR_BLACK" stroke="$COLOR_ACCENT" stroke-width="1"/>
+    <rect x="90" y="186" width="80" height="4" fill="$COLOR_ACCENT"/>
+  </g>
+  
+  <!-- Tab hover -->
+  <g id="tab-hover">
+    <rect x="180" y="160" width="80" height="30" rx="2" fill="$COLOR_GRAY2" stroke="$COLOR_ACCENT_DIM" stroke-width="1"/>
+  </g>
+  
+  <!-- Checkbox unchecked -->
+  <g id="checkbox-unchecked">
+    <rect x="0" y="200" width="18" height="18" rx="2" fill="$COLOR_BLACK" stroke="$COLOR_GRAY3" stroke-width="1"/>
+  </g>
+  
+  <!-- Checkbox checked -->
+  <g id="checkbox-checked">
+    <rect x="25" y="200" width="18" height="18" rx="2" fill="$COLOR_ACCENT" stroke="$COLOR_ACCENT_BRIGHT" stroke-width="1"/>
+    <path d="M28,209 L32,213 L40,205" stroke="$COLOR_WHITE" stroke-width="2" fill="none"/>
+  </g>
+  
+  <!-- Radio unchecked -->
+  <g id="radio-unchecked">
+    <circle cx="59" cy="209" r="9" fill="$COLOR_BLACK" stroke="$COLOR_GRAY3" stroke-width="1"/>
+  </g>
+  
+  <!-- Radio checked -->
+  <g id="radio-checked">
+    <circle cx="84" cy="209" r="9" fill="$COLOR_BLACK" stroke="$COLOR_ACCENT" stroke-width="1"/>
+    <circle cx="84" cy="209" r="5" fill="$COLOR_ACCENT"/>
+  </g>
+  
+  <!-- Progressbar groove -->
+  <g id="progressbar-groove">
+    <rect x="0" y="230" width="200" height="8" rx="4" fill="$COLOR_GRAY1"/>
+  </g>
+  
+  <!-- Progressbar contents -->
+  <g id="progressbar-contents">
+    <rect x="0" y="245" width="100" height="8" rx="4" fill="$COLOR_ACCENT"/>
+  </g>
+  
+  <!-- Slider groove -->
+  <g id="slider-groove">
+    <rect x="0" y="260" width="200" height="4" rx="2" fill="$COLOR_GRAY1"/>
+  </g>
+  
+  <!-- Slider handle -->
+  <g id="slider-handle">
+    <circle cx="100" cy="275" r="8" fill="$COLOR_WHITE" stroke="$COLOR_ACCENT" stroke-width="2"/>
+  </g>
+  
+  <!-- Menu background -->
+  <g id="menu-background">
+    <rect x="400" y="0" width="150" height="150" rx="2" fill="$COLOR_GRAY1" stroke="$COLOR_GRAY3" stroke-width="1"/>
+  </g>
+  
+  <!-- Menu item hover -->
+  <g id="menu-item-hover">
+    <rect x="400" y="160" width="150" height="28" fill="$COLOR_ACCENT"/>
+  </g>
+  
+  <!-- Tooltip background -->
+  <g id="tooltip-background">
+    <rect x="400" y="200" width="150" height="40" rx="2" fill="$COLOR_BLACK" stroke="$COLOR_GRAY3" stroke-width="1"/>
+  </g>
+  
+  <!-- Frame/GroupBox -->
+  <g id="frame">
+    <rect x="0" y="300" width="150" height="100" rx="2" fill="none" stroke="$COLOR_GRAY3" stroke-width="1"/>
+  </g>
+  
+  <!-- Header section -->
+  <g id="header-section">
+    <rect x="160" y="300" width="150" height="30" fill="$COLOR_GRAY2" stroke="$COLOR_GRAY3" stroke-width="1"/>
+  </g>
+  
+  <!-- Spin box buttons -->
+  <g id="spinbox-up">
+    <rect x="320" y="300" width="20" height="15" fill="$COLOR_GRAY2" stroke="$COLOR_GRAY3" stroke-width="1"/>
+    <path d="M325,312 L330,305 L335,312" fill="$COLOR_WHITE"/>
+  </g>
+  
+  <g id="spinbox-down">
+    <rect x="320" y="320" width="20" height="15" fill="$COLOR_GRAY2" stroke="$COLOR_GRAY3" stroke-width="1"/>
+    <path d="M325,323 L330,330 L335,323" fill="$COLOR_WHITE"/>
+  </g>
+</svg>
+EOF
+
+    # Create the Kvantum configuration file
+    cat > "$KVANTUM_DIR/$THEME_NAME.kvconfig" << EOF
+[%General]
+author=Abyss Theme
+comment=Pure monochrome black theme for Qt applications
+x11drag=menubar_and_primary_toolbar
+alt_mnemonic=true
+left_tabs=false
+attach_active_tab=true
+mirror_doc_tabs=true
+group_toolbar_buttons=false
+toolbar_item_spacing=0
+toolbar_interior_spacing=2
+spread_progressbar=true
+composite=true
+menu_shadow_depth=7
+submenu_overlap=0
+splitter_width=1
+scroll_width=12
+scroll_arrows=false
+scroll_min_extent=60
+slider_width=4
+slider_handle_width=18
+slider_handle_length=18
+tickless_slider_handle_size=18
+center_toolbar_handle=true
+check_size=18
+textless_progressbar=false
+progressbar_thickness=8
+menubar_mouse_tracking=true
+toolbutton_style=0
+double_click=false
+translucent_windows=false
+blurring=false
+popup_blurring=false
+vertical_spin_indicators=false
+spin_button_width=20
+fill_rubberband=false
+merge_menubar_with_toolbar=false
+small_icon_size=16
+large_icon_size=32
+button_icon_size=16
+toolbar_icon_size=22
+combo_as_lineedit=true
+animate_states=true
+button_contents_shift=false
+combo_menu=true
+hide_combo_checkboxes=false
+combo_focus_rect=true
+scrollbar_in_view=false
+transient_scrollbar=false
+transient_groove=false
+scrollable_menu=true
+tree_branch_line=true
+no_window_pattern=true
+opaque=kaffeine,kmplayer,subtitlecomposer,kdenlive,vlc,smplayer,smplayer2,avidemux,avidemux2_qt4,avidemux3_qt4,avidemux3_qt5,kamoso,QtCreator,VirtualBox,VirtualBoxVM,trojita,dragon,digikam,lyx,Lightworks,Lightworks.bin,obs,obs-studio
+
+[GeneralColors]
+window.color=$COLOR_BLACK
+base.color=$COLOR_BLACK
+alt.base.color=$COLOR_GRAY1
+button.color=$COLOR_GRAY2
+light.color=$COLOR_GRAY3
+mid.light.color=$COLOR_GRAY2
+dark.color=$COLOR_BLACK
+mid.color=$COLOR_GRAY1
+highlight.color=$COLOR_ACCENT
+inactive.highlight.color=$COLOR_ACCENT_DIM
+text.color=$COLOR_WHITE
+window.text.color=$COLOR_WHITE
+button.text.color=$COLOR_WHITE
+disabled.text.color=$COLOR_GRAY3
+tooltip.text.color=$COLOR_WHITE
+highlight.text.color=$COLOR_WHITE
+link.color=$COLOR_ACCENT_BRIGHT
+link.visited.color=$COLOR_ACCENT_DIM
+progress.indicator.text.color=$COLOR_WHITE
+progress.inactive.indicator.text.color=$COLOR_WHITE
+
+[Hacks]
+transparent_dolphin_view=false
+transparent_pcmanfm_sidepane=false
+transparent_pcmanfm_view=false
+blur_translucent=false
+transparent_ktitle_label=true
+transparent_menutitle=true
+respect_darkness=true
+kcapacitybar_as_progressbar=true
+force_size_grip=true
+iconless_pushbutton=false
+iconless_menu=false
+disabled_icon_opacity=70
+lxqtmainmenu_iconsize=22
+normal_default_pushbutton=true
+single_top_toolbar=false
+middle_click_scroll=false
+no_selection_tint=false
+transparent_arrow_button=true
+tint_on_mouseover=0
+scroll_jump_workaround=false
+centered_forms=false
+kinetic_scrolling=false
+noninteger_translucency=false
+
+[PanelButtonCommand]
+frame=true
+frame.element=button
+frame.top=3
+frame.bottom=3
+frame.left=3
+frame.right=3
+interior=true
+interior.element=button
+indicator.size=9
+text.normal.color=$COLOR_WHITE
+text.focus.color=$COLOR_WHITE
+text.press.color=$COLOR_WHITE
+text.toggle.color=$COLOR_WHITE
+text.shadow=0
+text.margin=1
+text.iconspacing=4
+indicator.element=arrow
+min_width=+0.4font
+min_height=+0.4font
+
+[PanelButtonTool]
+inherits=PanelButtonCommand
+
+[Dock]
+inherits=PanelButtonCommand
+interior.element=toolbar
+frame.element=toolbar
+frame.top=0
+frame.bottom=0
+frame.left=0
+frame.right=0
+
+[DockTitle]
+inherits=PanelButtonCommand
+frame=false
+interior=false
+text.normal.color=$COLOR_WHITE
+text.focus.color=$COLOR_ACCENT_BRIGHT
+text.bold=true
+
+[IndicatorSpinBox]
+inherits=PanelButtonCommand
+indicator.element=spin
+indicator.size=9
+frame.top=2
+frame.bottom=2
+frame.left=2
+frame.right=2
+
+[RadioButton]
+inherits=PanelButtonCommand
+frame=false
+interior.element=radio
+text.normal.color=$COLOR_WHITE
+text.focus.color=$COLOR_ACCENT_BRIGHT
+
+[CheckBox]
+inherits=PanelButtonCommand
+frame=false
+interior.element=checkbox
+text.normal.color=$COLOR_WHITE
+text.focus.color=$COLOR_ACCENT_BRIGHT
+
+[Focus]
+inherits=PanelButtonCommand
+frame=true
+frame.element=focus
+frame.top=1
+frame.bottom=1
+frame.left=1
+frame.right=1
+frame.patternsize=20
+
+[GenericFrame]
+inherits=PanelButtonCommand
+frame=true
+interior=false
+frame.element=common
+frame.top=1
+frame.bottom=1
+frame.left=1
+frame.right=1
+
+[LineEdit]
+inherits=PanelButtonCommand
+frame.element=lineedit
+interior.element=lineedit
+text.margin.top=2
+text.margin.bottom=2
+text.margin.left=4
+text.margin.right=4
+
+[DropDownButton]
+inherits=PanelButtonCommand
+indicator.element=arrow-down
+indicator.size=9
+
+[IndicatorArrow]
+inherits=PanelButtonCommand
+indicator.element=arrow
+indicator.size=9
+
+[ToolboxTab]
+inherits=PanelButtonCommand
+text.normal.color=$COLOR_WHITE
+text.focus.color=$COLOR_ACCENT_BRIGHT
+text.press.color=$COLOR_WHITE
+
+[Tab]
+inherits=PanelButtonCommand
+frame.element=tab
+interior.element=tab
+frame.top=2
+frame.bottom=3
+frame.left=3
+frame.right=3
+text.normal.color=$COLOR_GRAY3
+text.focus.color=$COLOR_WHITE
+text.toggle.color=$COLOR_WHITE
+indicator.element=tab
+indicator.size=12
+
+[TabFrame]
+inherits=PanelButtonCommand
+frame=true
+frame.element=tabframe
+frame.top=2
+frame.bottom=2
+frame.left=2
+frame.right=2
+interior=true
+interior.element=tabframe
+
+[TreeExpander]
+inherits=PanelButtonCommand
+frame=false
+interior=false
+indicator.size=9
+indicator.element=tree
+
+[HeaderSection]
+inherits=PanelButtonCommand
+frame.element=header
+interior.element=header
+frame.top=1
+frame.bottom=1
+frame.left=1
+frame.right=1
+text.normal.color=$COLOR_WHITE
+text.focus.color=$COLOR_ACCENT_BRIGHT
+text.press.color=$COLOR_WHITE
+
+[SizeGrip]
+inherits=PanelButtonCommand
+frame=false
+interior=false
+indicator.element=resize
+indicator.size=13
+
+[Toolbar]
+inherits=PanelButtonCommand
+frame=false
+frame.element=toolbar
+interior=true
+interior.element=toolbar
+text.normal.color=$COLOR_WHITE
+text.focus.color=$COLOR_ACCENT_BRIGHT
+
+[Slider]
+inherits=PanelButtonCommand
+frame=false
+interior.element=slider
+frame.element=slider
+frame.top=3
+frame.bottom=3
+frame.left=3
+frame.right=3
+
+[SliderCursor]
+inherits=PanelButtonCommand
+frame=false
+interior.element=slidercursor
+
+[Progressbar]
+inherits=PanelButtonCommand
+frame.element=progress
+interior.element=progress
+frame.top=2
+frame.bottom=2
+frame.left=2
+frame.right=2
+text.normal.color=$COLOR_WHITE
+text.focus.color=$COLOR_WHITE
+text.press.color=$COLOR_WHITE
+text.toggle.color=$COLOR_WHITE
+text.bold=true
+
+[ProgressbarContents]
+inherits=PanelButtonCommand
+frame=false
+interior.element=progress-pattern
+
+[ItemView]
+inherits=PanelButtonCommand
+frame.element=itemview
+interior.element=itemview
+frame.top=2
+frame.bottom=2
+frame.left=2
+frame.right=2
+text.normal.color=$COLOR_WHITE
+text.focus.color=$COLOR_WHITE
+text.press.color=$COLOR_WHITE
+text.toggle.color=$COLOR_WHITE
+
+[Splitter]
+inherits=PanelButtonCommand
+frame=false
+interior=false
+indicator.size=32
+
+[Scrollbar]
+inherits=PanelButtonCommand
+frame=false
+interior=false
+indicator.element=arrow
+indicator.size=9
+
+[ScrollbarSlider]
+inherits=PanelButtonCommand
+frame=false
+frame.element=scrollbarslider
+interior=true
+interior.element=scrollbarslider
+frame.top=4
+frame.bottom=4
+frame.left=4
+frame.right=4
+
+[ScrollbarGroove]
+inherits=PanelButtonCommand
+frame=false
+interior=true
+interior.element=scrollbargroove
+
+[Menu]
+inherits=PanelButtonCommand
+frame.element=menu
+interior.element=menu
+frame.top=3
+frame.bottom=3
+frame.left=3
+frame.right=3
+text.normal.color=$COLOR_WHITE
+
+[MenuItem]
+inherits=PanelButtonCommand
+frame=true
+frame.element=menuitem
+interior.element=menuitem
+frame.top=2
+frame.bottom=2
+frame.left=5
+frame.right=5
+text.normal.color=$COLOR_WHITE
+text.focus.color=$COLOR_WHITE
+text.margin.top=1
+text.margin.bottom=1
+text.margin.left=3
+text.margin.right=3
+
+[MenuBar]
+inherits=PanelButtonCommand
+frame=false
+interior=true
+interior.element=menubar
+text.normal.color=$COLOR_WHITE
+
+[MenuBarItem]
+inherits=PanelButtonCommand
+frame=true
+frame.element=menubaritem
+interior.element=menubaritem
+frame.top=2
+frame.bottom=2
+frame.left=4
+frame.right=4
+text.normal.color=$COLOR_WHITE
+text.focus.color=$COLOR_WHITE
+text.margin.top=1
+text.margin.bottom=1
+
+[TitleBar]
+inherits=PanelButtonCommand
+frame=false
+interior=false
+text.normal.color=$COLOR_WHITE
+text.focus.color=$COLOR_WHITE
+text.bold=true
+text.italic=false
+
+[ComboBox]
+inherits=PanelButtonCommand
+frame.element=combo
+interior.element=combo
+indicator.element=arrow-down
+indicator.size=9
+
+[GroupBox]
+inherits=GenericFrame
+frame=true
+frame.element=group
+text.shadow=0
+text.margin=0
+frame.top=4
+frame.bottom=4
+frame.left=4
+frame.right=4
+text.normal.color=$COLOR_WHITE
+text.focus.color=$COLOR_ACCENT_BRIGHT
+text.bold=true
+
+[TabBarFrame]
+inherits=GenericFrame
+frame=true
+frame.element=tabbarframe
+interior=false
+
+[ToolTip]
+inherits=GenericFrame
+frame.element=tooltip
+interior.element=tooltip
+frame.top=4
+frame.bottom=4
+frame.left=4
+frame.right=4
+text.normal.color=$COLOR_WHITE
+
+[StatusBar]
+inherits=GenericFrame
+frame=false
+interior=false
+
+[Window]
+interior=true
+interior.element=window
+frame.top=0
+frame.bottom=0
+frame.left=0
+frame.right=0
+EOF
+
+    # Create kvantum.kvconfig to set this as the active theme
+    mkdir -p "$HOME/.config/Kvantum"
+    cat > "$HOME/.config/Kvantum/kvantum.kvconfig" << EOF
+[General]
+theme=$THEME_NAME
+EOF
+
+    log "Kvantum theme created"
+}
+
+create_aurorae_theme() {
+    log "Creating Aurorae window decoration theme..."
+    
+    mkdir -p "$AURORAE_DIR"
+    
+    # Create the main decoration SVG
+    cat > "$AURORAE_DIR/decoration.svg" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="150" viewBox="0 0 500 150">
+  <!-- Window decoration elements for Aurorae -->
+  
+  <!-- Active window title bar -->
+  <g id="decoration-top">
+    <rect id="decoration-top-center" x="50" y="0" width="400" height="28" fill="$COLOR_BLACK"/>
+    <rect id="decoration-top-left" x="0" y="0" width="50" height="28" fill="$COLOR_BLACK"/>
+    <rect id="decoration-top-right" x="450" y="0" width="50" height="28" fill="$COLOR_BLACK"/>
+  </g>
+  
+  <!-- Active window borders -->
+  <g id="decoration-border">
+    <rect id="decoration-left" x="0" y="28" width="1" height="100" fill="$COLOR_GRAY3"/>
+    <rect id="decoration-right" x="499" y="28" width="1" height="100" fill="$COLOR_GRAY3"/>
+    <rect id="decoration-bottom" x="0" y="128" width="500" height="1" fill="$COLOR_GRAY3"/>
+  </g>
+  
+  <!-- Inactive window title bar -->
+  <g id="decoration-inactive-top">
+    <rect id="decoration-inactive-top-center" x="50" y="0" width="400" height="28" fill="$COLOR_BLACK"/>
+    <rect id="decoration-inactive-top-left" x="0" y="0" width="50" height="28" fill="$COLOR_BLACK"/>
+    <rect id="decoration-inactive-top-right" x="450" y="0" width="50" height="28" fill="$COLOR_BLACK"/>
+  </g>
+  
+  <!-- Inactive window borders -->
+  <g id="decoration-inactive-border">
+    <rect id="decoration-inactive-left" x="0" y="28" width="1" height="100" fill="$COLOR_GRAY2"/>
+    <rect id="decoration-inactive-right" x="499" y="28" width="1" height="100" fill="$COLOR_GRAY2"/>
+    <rect id="decoration-inactive-bottom" x="0" y="128" width="500" height="1" fill="$COLOR_GRAY2"/>
+  </g>
+</svg>
+EOF
+
+    # Create close button SVG
+    cat > "$AURORAE_DIR/close.svg" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50">
+  <!-- Close button states -->
+  
+  <!-- Normal state -->
+  <g id="close">
+    <circle cx="25" cy="25" r="10" fill="transparent"/>
+    <path d="M18,18 L32,32 M32,18 L18,32" stroke="$COLOR_GRAY3" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Hover state -->
+  <g id="close-hover">
+    <circle cx="25" cy="25" r="12" fill="$COLOR_ACCENT"/>
+    <path d="M18,18 L32,32 M32,18 L18,32" stroke="$COLOR_WHITE" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Pressed state -->
+  <g id="close-pressed">
+    <circle cx="25" cy="25" r="12" fill="$COLOR_ACCENT_BRIGHT"/>
+    <path d="M18,18 L32,32 M32,18 L18,32" stroke="$COLOR_WHITE" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Inactive state -->
+  <g id="close-inactive">
+    <circle cx="25" cy="25" r="10" fill="transparent"/>
+    <path d="M18,18 L32,32 M32,18 L18,32" stroke="$COLOR_GRAY2" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>
+EOF
+
+    # Create maximize button SVG
+    cat > "$AURORAE_DIR/maximize.svg" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50">
+  <!-- Maximize button states -->
+  
+  <!-- Normal state -->
+  <g id="maximize">
+    <rect x="17" y="17" width="16" height="16" fill="none" stroke="$COLOR_GRAY3" stroke-width="2"/>
+  </g>
+  
+  <!-- Hover state -->
+  <g id="maximize-hover">
+    <circle cx="25" cy="25" r="12" fill="$COLOR_ACCENT_DIM"/>
+    <rect x="17" y="17" width="16" height="16" fill="none" stroke="$COLOR_WHITE" stroke-width="2"/>
+  </g>
+  
+  <!-- Pressed state -->
+  <g id="maximize-pressed">
+    <circle cx="25" cy="25" r="12" fill="$COLOR_ACCENT"/>
+    <rect x="17" y="17" width="16" height="16" fill="none" stroke="$COLOR_WHITE" stroke-width="2"/>
+  </g>
+  
+  <!-- Inactive state -->
+  <g id="maximize-inactive">
+    <rect x="17" y="17" width="16" height="16" fill="none" stroke="$COLOR_GRAY2" stroke-width="2"/>
+  </g>
+</svg>
+EOF
+
+    # Create restore button SVG (for maximized windows)
+    cat > "$AURORAE_DIR/restore.svg" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50">
+  <!-- Restore button states -->
+  
+  <!-- Normal state -->
+  <g id="restore">
+    <rect x="20" y="14" width="12" height="12" fill="none" stroke="$COLOR_GRAY3" stroke-width="2"/>
+    <rect x="18" y="18" width="12" height="12" fill="$COLOR_BLACK" stroke="$COLOR_GRAY3" stroke-width="2"/>
+  </g>
+  
+  <!-- Hover state -->
+  <g id="restore-hover">
+    <circle cx="25" cy="25" r="12" fill="$COLOR_ACCENT_DIM"/>
+    <rect x="20" y="14" width="12" height="12" fill="none" stroke="$COLOR_WHITE" stroke-width="2"/>
+    <rect x="18" y="18" width="12" height="12" fill="$COLOR_ACCENT_DIM" stroke="$COLOR_WHITE" stroke-width="2"/>
+  </g>
+  
+  <!-- Pressed state -->
+  <g id="restore-pressed">
+    <circle cx="25" cy="25" r="12" fill="$COLOR_ACCENT"/>
+    <rect x="20" y="14" width="12" height="12" fill="none" stroke="$COLOR_WHITE" stroke-width="2"/>
+    <rect x="18" y="18" width="12" height="12" fill="$COLOR_ACCENT" stroke="$COLOR_WHITE" stroke-width="2"/>
+  </g>
+  
+  <!-- Inactive state -->
+  <g id="restore-inactive">
+    <rect x="20" y="14" width="12" height="12" fill="none" stroke="$COLOR_GRAY2" stroke-width="2"/>
+    <rect x="18" y="18" width="12" height="12" fill="$COLOR_BLACK" stroke="$COLOR_GRAY2" stroke-width="2"/>
+  </g>
+</svg>
+EOF
+
+    # Create minimize button SVG
+    cat > "$AURORAE_DIR/minimize.svg" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50">
+  <!-- Minimize button states -->
+  
+  <!-- Normal state -->
+  <g id="minimize">
+    <rect x="17" y="24" width="16" height="2" fill="$COLOR_GRAY3"/>
+  </g>
+  
+  <!-- Hover state -->
+  <g id="minimize-hover">
+    <circle cx="25" cy="25" r="12" fill="$COLOR_ACCENT_DIM"/>
+    <rect x="17" y="24" width="16" height="2" fill="$COLOR_WHITE"/>
+  </g>
+  
+  <!-- Pressed state -->
+  <g id="minimize-pressed">
+    <circle cx="25" cy="25" r="12" fill="$COLOR_ACCENT"/>
+    <rect x="17" y="24" width="16" height="2" fill="$COLOR_WHITE"/>
+  </g>
+  
+  <!-- Inactive state -->
+  <g id="minimize-inactive">
+    <rect x="17" y="24" width="16" height="2" fill="$COLOR_GRAY2"/>
+  </g>
+</svg>
+EOF
+
+    # Create all-desktops (pin) button SVG
+    cat > "$AURORAE_DIR/alldesktops.svg" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50">
+  <!-- All Desktops button states -->
+  
+  <!-- Normal state -->
+  <g id="alldesktops">
+    <circle cx="25" cy="25" r="4" fill="$COLOR_GRAY3"/>
+  </g>
+  
+  <!-- Hover state -->
+  <g id="alldesktops-hover">
+    <circle cx="25" cy="25" r="12" fill="$COLOR_ACCENT_DIM"/>
+    <circle cx="25" cy="25" r="4" fill="$COLOR_WHITE"/>
+  </g>
+  
+  <!-- Pressed state -->
+  <g id="alldesktops-pressed">
+    <circle cx="25" cy="25" r="12" fill="$COLOR_ACCENT"/>
+    <circle cx="25" cy="25" r="5" fill="$COLOR_WHITE"/>
+  </g>
+  
+  <!-- Inactive state -->
+  <g id="alldesktops-inactive">
+    <circle cx="25" cy="25" r="4" fill="$COLOR_GRAY2"/>
+  </g>
+</svg>
+EOF
+
+    # Create keep-above button SVG
+    cat > "$AURORAE_DIR/keepabove.svg" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50">
+  <!-- Keep Above button states -->
+  
+  <!-- Normal state -->
+  <g id="keepabove">
+    <path d="M17,28 L25,18 L33,28" stroke="$COLOR_GRAY3" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Hover state -->
+  <g id="keepabove-hover">
+    <circle cx="25" cy="25" r="12" fill="$COLOR_ACCENT_DIM"/>
+    <path d="M17,28 L25,18 L33,28" stroke="$COLOR_WHITE" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Pressed state -->
+  <g id="keepabove-pressed">
+    <circle cx="25" cy="25" r="12" fill="$COLOR_ACCENT"/>
+    <path d="M17,28 L25,18 L33,28" stroke="$COLOR_WHITE" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Inactive state -->
+  <g id="keepabove-inactive">
+    <path d="M17,28 L25,18 L33,28" stroke="$COLOR_GRAY2" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>
+EOF
+
+    # Create keep-below button SVG
+    cat > "$AURORAE_DIR/keepbelow.svg" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50">
+  <!-- Keep Below button states -->
+  
+  <!-- Normal state -->
+  <g id="keepbelow">
+    <path d="M17,22 L25,32 L33,22" stroke="$COLOR_GRAY3" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Hover state -->
+  <g id="keepbelow-hover">
+    <circle cx="25" cy="25" r="12" fill="$COLOR_ACCENT_DIM"/>
+    <path d="M17,22 L25,32 L33,22" stroke="$COLOR_WHITE" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Pressed state -->
+  <g id="keepbelow-pressed">
+    <circle cx="25" cy="25" r="12" fill="$COLOR_ACCENT"/>
+    <path d="M17,22 L25,32 L33,22" stroke="$COLOR_WHITE" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Inactive state -->
+  <g id="keepbelow-inactive">
+    <path d="M17,22 L25,32 L33,22" stroke="$COLOR_GRAY2" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>
+EOF
+
+    # Create shade button SVG
+    cat > "$AURORAE_DIR/shade.svg" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50">
+  <!-- Shade button states -->
+  
+  <!-- Normal state -->
+  <g id="shade">
+    <rect x="17" y="20" width="16" height="2" fill="$COLOR_GRAY3"/>
+    <rect x="17" y="25" width="16" height="2" fill="$COLOR_GRAY3"/>
+    <rect x="17" y="30" width="16" height="2" fill="$COLOR_GRAY3"/>
+  </g>
+  
+  <!-- Hover state -->
+  <g id="shade-hover">
+    <circle cx="25" cy="25" r="12" fill="$COLOR_ACCENT_DIM"/>
+    <rect x="17" y="20" width="16" height="2" fill="$COLOR_WHITE"/>
+    <rect x="17" y="25" width="16" height="2" fill="$COLOR_WHITE"/>
+    <rect x="17" y="30" width="16" height="2" fill="$COLOR_WHITE"/>
+  </g>
+  
+  <!-- Pressed state -->
+  <g id="shade-pressed">
+    <circle cx="25" cy="25" r="12" fill="$COLOR_ACCENT"/>
+    <rect x="17" y="20" width="16" height="2" fill="$COLOR_WHITE"/>
+    <rect x="17" y="25" width="16" height="2" fill="$COLOR_WHITE"/>
+    <rect x="17" y="30" width="16" height="2" fill="$COLOR_WHITE"/>
+  </g>
+  
+  <!-- Inactive state -->
+  <g id="shade-inactive">
+    <rect x="17" y="20" width="16" height="2" fill="$COLOR_GRAY2"/>
+    <rect x="17" y="25" width="16" height="2" fill="$COLOR_GRAY2"/>
+    <rect x="17" y="30" width="16" height="2" fill="$COLOR_GRAY2"/>
+  </g>
+</svg>
+EOF
+
+    # Create the Aurorae configuration file
+    cat > "$AURORAE_DIR/${THEME_NAME}rc" << EOF
+[General]
+ActiveTextColor=$COLOR_WHITE
+Animation=0
+ButtonHeight=22
+ButtonMarginTop=4
+ButtonSpacing=4
+ButtonWidth=22
+ExplicitButtonSpacer=4
+InactiveTextColor=$COLOR_GRAY3
+PaddingBottom=1
+PaddingLeft=1
+PaddingRight=1
+PaddingTop=4
+TitleAlignment=Center
+TitleEdgeBottom=0
+TitleEdgeBottomMaximized=0
+TitleEdgeLeft=4
+TitleEdgeLeftMaximized=0
+TitleEdgeRight=4
+TitleEdgeRightMaximized=0
+TitleEdgeTop=4
+TitleEdgeTopMaximized=0
+TitleHeight=24
+TitleHeightMaximized=24
+TitleBorderLeft=0
+TitleBorderRight=0
+EOF
+
+    # Create metadata.desktop
+    cat > "$AURORAE_DIR/metadata.desktop" << EOF
+[Desktop Entry]
+Name=$THEME_NAME
+Comment=Pure monochrome window decoration theme
+X-KDE-PluginInfo-Author=Abyss Theme
+X-KDE-PluginInfo-Email=abyss@local
+X-KDE-PluginInfo-Name=$THEME_NAME
+X-KDE-PluginInfo-Version=1.0
+X-KDE-PluginInfo-Website=
+X-KDE-PluginInfo-License=MIT
+EOF
+
+    log "Aurorae window decoration theme created"
+}
+
+create_plymouth_theme() {
+    log "Creating Plymouth boot theme..."
+    
+    # Plymouth requires sudo for installation
+    if [[ ! -d "$PLYMOUTH_THEME_DIR" ]]; then
+        sudo mkdir -p "$PLYMOUTH_THEME_DIR"
+    fi
+    
+    # Create the main Plymouth theme descriptor
+    sudo tee "$PLYMOUTH_THEME_DIR/$THEME_NAME.plymouth" > /dev/null << EOF
+[Plymouth Theme]
+Name=$THEME_NAME
+Description=Pure monochrome boot splash theme
+ModuleName=script
+
+[script]
+ImageDir=$PLYMOUTH_THEME_DIR
+ScriptFile=$PLYMOUTH_THEME_DIR/$THEME_NAME.script
+EOF
+
+    # Create the Plymouth script
+    # Using hex colors without # for Plymouth script compatibility
+    local accent_hex="${COLOR_ACCENT#\#}"
+    local accent_bright_hex="${COLOR_ACCENT_BRIGHT#\#}"
+    local white_hex="${COLOR_WHITE#\#}"
+    local gray3_hex="${COLOR_GRAY3#\#}"
+    
+    sudo tee "$PLYMOUTH_THEME_DIR/$THEME_NAME.script" > /dev/null << 'SCRIPT_EOF'
+# Abyss Plymouth Theme Script
+# Pure monochrome boot splash
+
+# Window and screen setup
+Window.SetBackgroundTopColor(0, 0, 0);
+Window.SetBackgroundBottomColor(0, 0, 0);
+
+# Get screen dimensions
+screen_width = Window.GetWidth();
+screen_height = Window.GetHeight();
+screen_x = Window.GetX();
+screen_y = Window.GetY();
+
+# Theme name text
+theme_text = "$THEME_NAME";
+
+# Progress bar dimensions
+progress_bar_width = 300;
+progress_bar_height = 4;
+progress_bar_x = screen_x + (screen_width / 2) - (progress_bar_width / 2);
+progress_bar_y = screen_y + (screen_height / 2);
+
+# Create progress bar background (dark gray)
+progress_bg = Image.Text("", 0.07, 0.07, 0.07);
+for (i = 0; i < progress_bar_width; i++) {
+    progress_bg_sprite[i] = Sprite();
+    progress_bg_sprite[i].SetImage(Image.Text("|", 0.07, 0.07, 0.07));
+    progress_bg_sprite[i].SetPosition(progress_bar_x + i, progress_bar_y, 1);
+}
+
+# Progress indicator sprites array
+progress_sprites = [];
+
+# Create theme name text
+SCRIPT_EOF
+
+    # Now append the color-specific parts using actual variables
+    local r_accent=$((16#${accent_hex:0:2}))
+    local g_accent=$((16#${accent_hex:2:2}))
+    local b_accent=$((16#${accent_hex:4:2}))
+    local r_accent_norm=$(echo "scale=2; $r_accent/255" | bc)
+    local g_accent_norm=$(echo "scale=2; $g_accent/255" | bc)
+    local b_accent_norm=$(echo "scale=2; $b_accent/255" | bc)
+    
+    sudo tee -a "$PLYMOUTH_THEME_DIR/$THEME_NAME.script" > /dev/null << EOF
+
+# Accent color values (normalized 0-1)
+accent_r = $r_accent_norm;
+accent_g = $g_accent_norm;
+accent_b = $b_accent_norm;
+
+# Create title text
+title_image = Image.Text("$THEME_NAME", 1, 1, 1, 1, "Monospace 24");
+title_sprite = Sprite(title_image);
+title_sprite.SetPosition(screen_x + (screen_width / 2) - (title_image.GetWidth() / 2), progress_bar_y + 40, 2);
+
+# Animation state
+global.progress = 0;
+global.pulse_state = 0;
+global.pulse_direction = 1;
+
+# Progress callback function
+fun refresh_callback() {
+    # Pulse animation
+    global.pulse_state += global.pulse_direction * 0.02;
+    if (global.pulse_state >= 1) {
+        global.pulse_state = 1;
+        global.pulse_direction = -1;
+    } else if (global.pulse_state <= 0.3) {
+        global.pulse_state = 0.3;
+        global.pulse_direction = 1;
+    }
+}
+
+# Boot progress callback
+fun boot_progress_callback(time, progress) {
+    global.progress = progress;
+    
+    # Calculate progress bar fill width
+    fill_width = Math.Int(progress * progress_bar_width);
+    
+    # Clear old progress sprites
+    for (i = 0; i < progress_bar_width; i++) {
+        if (progress_sprites[i]) {
+            progress_sprites[i].SetOpacity(0);
+        }
+    }
+    
+    # Draw progress bar with accent color
+    for (i = 0; i < fill_width; i++) {
+        if (!progress_sprites[i]) {
+            progress_sprites[i] = Sprite();
+        }
+        # Create a colored block for progress
+        block_img = Image.Text("|", accent_r * global.pulse_state, accent_g * global.pulse_state, accent_b * global.pulse_state);
+        progress_sprites[i].SetImage(block_img);
+        progress_sprites[i].SetPosition(progress_bar_x + i, progress_bar_y, 2);
+        progress_sprites[i].SetOpacity(1);
+    }
+}
+
+# Password prompt
+fun password_dialogue_setup(title, bullet) {
+    local.box_image = Image.Text("", 0.1, 0.1, 0.1);
+    local.lock = Image.Text("*", 1, 1, 1);
+    
+    box_sprite = Sprite(box_image);
+    box_sprite.SetPosition(screen_x + screen_width / 2 - 150, screen_y + screen_height / 2 - 50, 10);
+    
+    title_sprite = Sprite(Image.Text(title, 1, 1, 1));
+    title_sprite.SetPosition(screen_x + screen_width / 2 - 100, screen_y + screen_height / 2 - 40, 11);
+    
+    global.password_bullets = [];
+    return local.lock;
+}
+
+fun password_dialogue_opacity(opacity) {
+    box_sprite.SetOpacity(opacity);
+    title_sprite.SetOpacity(opacity);
+    for (i = 0; i < global.password_bullets.size(); i++) {
+        global.password_bullets[i].SetOpacity(opacity);
+    }
+}
+
+# Message display
+fun display_message_callback(text) {
+    message_sprite = Sprite(Image.Text(text, 0.7, 0.7, 0.7, 1, "Monospace 12"));
+    message_sprite.SetPosition(screen_x + 10, screen_y + screen_height - 30, 3);
+}
+
+fun hide_message_callback(text) {
+    message_sprite.SetOpacity(0);
+}
+
+# Register callbacks
+Plymouth.SetRefreshFunction(refresh_callback);
+Plymouth.SetBootProgressFunction(boot_progress_callback);
+Plymouth.SetMessageFunction(display_message_callback);
+Plymouth.SetHideMessageFunction(hide_message_callback);
+EOF
+
+    # Set permissions
+    sudo chmod 644 "$PLYMOUTH_THEME_DIR/$THEME_NAME.plymouth"
+    sudo chmod 644 "$PLYMOUTH_THEME_DIR/$THEME_NAME.script"
+    
+    # Configure Plymouth to use this theme (optional, user may need to rebuild initramfs)
+    if command -v plymouth-set-default-theme &>/dev/null; then
+        log "Setting Plymouth theme (you may need to rebuild initramfs)..."
+        sudo plymouth-set-default-theme -R "$THEME_NAME" 2>/dev/null || \
+            log "Warning: Could not set Plymouth theme automatically. Run: sudo plymouth-set-default-theme -R $THEME_NAME"
+    else
+        log "Plymouth theme created. To activate, run:"
+        log "  sudo plymouth-set-default-theme -R $THEME_NAME"
+        log "  sudo mkinitcpio -P  # For Arch Linux"
+    fi
+    
+    log "Plymouth boot theme created"
+}
+
 create_lookfeel_package() {
     log "Creating Look-and-Feel package..."
     
@@ -1132,10 +2325,11 @@ apply_plasma_settings() {
     
     # Set global theme using detected tool
     if [[ -n "$LOOKANDFEELTOOL" ]]; then
+        local lookfeel_id="com.github.abyss${THEME_VARIANT:+.${THEME_VARIANT,,}}"
         if [[ "$LOOKANDFEELTOOL" == "plasma-apply-lookandfeel" ]]; then
-            $LOOKANDFEELTOOL -a com.github.abyss 2>/dev/null || true
+            $LOOKANDFEELTOOL -a "$lookfeel_id" 2>/dev/null || true
         else
-            $LOOKANDFEELTOOL -a com.github.abyss 2>/dev/null || true
+            $LOOKANDFEELTOOL -a "$lookfeel_id" 2>/dev/null || true
         fi
     fi
     
@@ -1155,17 +2349,29 @@ apply_plasma_settings() {
     fi
     
     # Dark theme preference
-    $KWRITECONFIG --file kdeglobals --group KDE --key LookAndFeelPackage com.github.abyss
+    $KWRITECONFIG --file kdeglobals --group KDE --key LookAndFeelPackage "com.github.abyss${THEME_VARIANT:+.${THEME_VARIANT,,}}"
     
-    # Window decorations
-    $KWRITECONFIG --file kwinrc --group org.kde.kdecoration2 --key library org.kde.breeze
-    $KWRITECONFIG --file kwinrc --group org.kde.kdecoration2 --key theme Breeze
+    # Window decorations - use Aurorae with our theme
+    $KWRITECONFIG --file kwinrc --group org.kde.kdecoration2 --key library org.kde.kwin.aurorae
+    $KWRITECONFIG --file kwinrc --group org.kde.kdecoration2 --key theme "__aurorae__svg__$THEME_NAME"
     
     # Icon theme
     $KWRITECONFIG --file kdeglobals --group Icons --key Theme breeze-dark
     
     # Cursor theme
     $KWRITECONFIG --file kcminputrc --group Mouse --key cursorTheme breeze_cursors
+    
+    # Configure Kvantum as the Qt style
+    $KWRITECONFIG --file kdeglobals --group KDE --key widgetStyle kvantum
+    
+    # Set environment variable for Qt apps to use Kvantum (via profile)
+    if [[ ! -f "$HOME/.config/environment.d/kvantum.conf" ]]; then
+        mkdir -p "$HOME/.config/environment.d"
+        cat > "$HOME/.config/environment.d/kvantum.conf" << EOF
+QT_STYLE_OVERRIDE=kvantum
+EOF
+        log "Created Kvantum environment configuration"
+    fi
     
     log "Plasma settings applied. Restart Plasma for full effect: killall plasmashell && plasmashell &"
 }
@@ -1192,18 +2398,22 @@ main() {
     create_plasma_theme
     create_color_scheme
     create_gtk_themes
+    create_kvantum_theme
+    create_aurorae_theme
     create_lookfeel_package
     create_sddm_theme
     configure_sddm
+    create_plymouth_theme
     apply_plasma_settings
     
     log "Installation complete!"
     log ""
     log "Next steps:"
     log "1. Restart Plasma: killall plasmashell && plasmashell &"
-    log "2. Or reboot for SDDM theme"
+    log "2. Or reboot for SDDM and Plymouth themes"
     log "3. System Settings > Appearance > Global Theme > $THEME_NAME"
-    log "4. Enjoy the void."
+    log "4. For Plymouth: sudo mkinitcpio -P (rebuild initramfs)"
+    log "5. Enjoy the void."
 }
 
 main "$@"

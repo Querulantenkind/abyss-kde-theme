@@ -17,6 +17,12 @@ SDDM_THEME_DIR="/usr/share/sddm/themes/$THEME_NAME"
 GTK_THEME_DIR="$HOME/.themes/$THEME_NAME"
 WALLPAPER_DIR="$HOME/.local/share/wallpapers/$THEME_NAME"
 COLOR_SCHEME="$HOME/.local/share/color-schemes/$THEME_NAME.colors"
+KVANTUM_DIR="$HOME/.config/Kvantum/$THEME_NAME"
+AURORAE_DIR="$HOME/.local/share/aurorae/themes/$THEME_NAME"
+PLYMOUTH_THEME_DIR="/usr/share/plymouth/themes/$THEME_NAME"
+
+# Theme variants to remove
+THEME_VARIANTS=("Abyss" "Abyss-Crimson" "Abyss-Cobalt" "Abyss-Emerald")
 
 # ============================================================================
 # FUNCTIONS
@@ -128,17 +134,81 @@ remove_wallpaper() {
 remove_sddm_theme() {
     log "Removing SDDM theme..."
     
-    if [[ -d "$SDDM_THEME_DIR" ]]; then
-        sudo rm -rf "$SDDM_THEME_DIR"
-        log "  Removed: $SDDM_THEME_DIR"
-    else
-        warn "  Not found: $SDDM_THEME_DIR"
-    fi
+    # Remove all variants
+    for variant in "${THEME_VARIANTS[@]}"; do
+        local sddm_dir="/usr/share/sddm/themes/$variant"
+        if [[ -d "$sddm_dir" ]]; then
+            sudo rm -rf "$sddm_dir"
+            log "  Removed: $sddm_dir"
+        fi
+    done
     
     # Remove SDDM configuration
     if [[ -f "/etc/sddm.conf.d/abyss.conf" ]]; then
         sudo rm -f "/etc/sddm.conf.d/abyss.conf"
         log "  Removed: /etc/sddm.conf.d/abyss.conf"
+    fi
+}
+
+remove_kvantum_theme() {
+    log "Removing Kvantum theme..."
+    
+    # Remove all variants
+    for variant in "${THEME_VARIANTS[@]}"; do
+        local kvantum_dir="$HOME/.config/Kvantum/$variant"
+        if [[ -d "$kvantum_dir" ]]; then
+            rm -rf "$kvantum_dir"
+            log "  Removed: $kvantum_dir"
+        fi
+    done
+    
+    # Reset Kvantum config if it was set to Abyss
+    local kvantum_config="$HOME/.config/Kvantum/kvantum.kvconfig"
+    if [[ -f "$kvantum_config" ]]; then
+        if grep -q "theme=Abyss" "$kvantum_config" 2>/dev/null; then
+            rm -f "$kvantum_config"
+            log "  Removed Kvantum configuration"
+        fi
+    fi
+}
+
+remove_aurorae_theme() {
+    log "Removing Aurorae window decoration theme..."
+    
+    # Remove all variants
+    for variant in "${THEME_VARIANTS[@]}"; do
+        local aurorae_dir="$HOME/.local/share/aurorae/themes/$variant"
+        if [[ -d "$aurorae_dir" ]]; then
+            rm -rf "$aurorae_dir"
+            log "  Removed: $aurorae_dir"
+        fi
+    done
+}
+
+remove_plymouth_theme() {
+    log "Removing Plymouth boot theme..."
+    
+    # Remove all variants
+    for variant in "${THEME_VARIANTS[@]}"; do
+        local plymouth_dir="/usr/share/plymouth/themes/$variant"
+        if [[ -d "$plymouth_dir" ]]; then
+            sudo rm -rf "$plymouth_dir"
+            log "  Removed: $plymouth_dir"
+        fi
+    done
+    
+    # Check if Plymouth was using our theme and reset to default
+    if command -v plymouth-set-default-theme &>/dev/null; then
+        local current_theme
+        current_theme=$(plymouth-set-default-theme 2>/dev/null || echo "")
+        for variant in "${THEME_VARIANTS[@]}"; do
+            if [[ "$current_theme" == "$variant" ]]; then
+                log "Resetting Plymouth theme to default..."
+                sudo plymouth-set-default-theme -R spinner 2>/dev/null || \
+                    log "Warning: Could not reset Plymouth theme. You may need to set it manually."
+                break
+            fi
+        done
     fi
 }
 
@@ -196,6 +266,19 @@ reset_plasma_settings() {
     # Reset look and feel package
     $KWRITECONFIG --file kdeglobals --group KDE --key LookAndFeelPackage "org.kde.breeze.desktop"
     
+    # Reset window decoration to Breeze
+    $KWRITECONFIG --file kwinrc --group org.kde.kdecoration2 --key library org.kde.breeze
+    $KWRITECONFIG --file kwinrc --group org.kde.kdecoration2 --key theme Breeze
+    
+    # Reset Qt style from Kvantum to Breeze
+    $KWRITECONFIG --file kdeglobals --group KDE --key widgetStyle Breeze
+    
+    # Remove Kvantum environment configuration
+    if [[ -f "$HOME/.config/environment.d/kvantum.conf" ]]; then
+        rm -f "$HOME/.config/environment.d/kvantum.conf"
+        log "  Removed Kvantum environment configuration"
+    fi
+    
     log "  Plasma settings reset to Breeze defaults"
 }
 
@@ -227,14 +310,18 @@ show_summary() {
     log "  - Look-and-Feel package"
     log "  - Color scheme"
     log "  - GTK themes"
+    log "  - Kvantum theme"
+    log "  - Aurorae window decoration"
     log "  - Wallpapers"
     log "  - SDDM theme (if applicable)"
+    log "  - Plymouth boot theme (if applicable)"
     log ""
     log "Settings have been reset to Breeze defaults."
     log ""
     log "Next steps:"
     log "  1. Restart Plasma: killall plasmashell && plasmashell &"
-    log "  2. Or reboot for complete reset (including SDDM)"
+    log "  2. Or reboot for complete reset (including SDDM and Plymouth)"
+    log "  3. For Plymouth: sudo mkinitcpio -P (rebuild initramfs)"
     log ""
 }
 
@@ -249,13 +336,17 @@ Options:
     -y, --yes           Skip confirmation prompts
     --keep-wallpaper    Keep the Abyss wallpaper
     --keep-gtk          Keep the GTK theme
+    --keep-kvantum      Keep the Kvantum theme
+    --keep-aurorae      Keep the Aurorae window decoration
     --keep-sddm         Skip SDDM theme removal
+    --keep-plymouth     Skip Plymouth theme removal
     --no-reset          Don't reset Plasma/GTK settings to Breeze
 
 Examples:
     $0                  Interactive uninstall with confirmation
     $0 -y               Uninstall without confirmation
     $0 --keep-wallpaper Uninstall but keep the wallpaper
+    $0 --keep-kvantum   Uninstall but keep Kvantum theme
 EOF
 }
 
@@ -267,7 +358,10 @@ main() {
     local skip_confirm=false
     local keep_wallpaper=false
     local keep_gtk=false
+    local keep_kvantum=false
+    local keep_aurorae=false
     local keep_sddm=false
+    local keep_plymouth=false
     local no_reset=false
     
     # Parse arguments
@@ -289,8 +383,20 @@ main() {
                 keep_gtk=true
                 shift
                 ;;
+            --keep-kvantum)
+                keep_kvantum=true
+                shift
+                ;;
+            --keep-aurorae)
+                keep_aurorae=true
+                shift
+                ;;
             --keep-sddm)
                 keep_sddm=true
+                shift
+                ;;
+            --keep-plymouth)
+                keep_plymouth=true
                 shift
                 ;;
             --no-reset)
@@ -316,13 +422,16 @@ main() {
     
     # Confirm uninstallation
     if [[ "$skip_confirm" != true ]]; then
-        log "This will remove the following:"
-        log "  - Plasma desktop theme: $THEME_DIR"
-        log "  - Look-and-Feel package: $LOOKFEEL_DIR"
-        log "  - Color scheme: $COLOR_SCHEME"
-        [[ "$keep_gtk" != true ]] && log "  - GTK themes: $GTK_THEME_DIR"
-        [[ "$keep_wallpaper" != true ]] && log "  - Wallpapers: $WALLPAPER_DIR"
-        [[ "$keep_sddm" != true ]] && log "  - SDDM theme: $SDDM_THEME_DIR"
+        log "This will remove the following (all variants):"
+        log "  - Plasma desktop themes"
+        log "  - Look-and-Feel packages"
+        log "  - Color schemes"
+        [[ "$keep_gtk" != true ]] && log "  - GTK themes"
+        [[ "$keep_kvantum" != true ]] && log "  - Kvantum themes"
+        [[ "$keep_aurorae" != true ]] && log "  - Aurorae window decorations"
+        [[ "$keep_wallpaper" != true ]] && log "  - Wallpapers"
+        [[ "$keep_sddm" != true ]] && log "  - SDDM themes"
+        [[ "$keep_plymouth" != true ]] && log "  - Plymouth boot themes"
         log ""
         
         if ! confirm "Proceed with uninstallation?"; then
@@ -332,14 +441,36 @@ main() {
         log ""
     fi
     
-    # Remove components
-    remove_plasma_theme
-    remove_lookfeel_package
-    remove_color_scheme
+    # Remove components for all variants
+    for variant in "${THEME_VARIANTS[@]}"; do
+        THEME_NAME="$variant"
+        THEME_DIR="$HOME/.local/share/plasma/desktoptheme/$THEME_NAME"
+        
+        # Determine look-and-feel ID
+        case "$variant" in
+            Abyss) LOOKFEEL_DIR="$HOME/.local/share/plasma/look-and-feel/com.github.abyss" ;;
+            Abyss-Crimson) LOOKFEEL_DIR="$HOME/.local/share/plasma/look-and-feel/com.github.abyss.crimson" ;;
+            Abyss-Cobalt) LOOKFEEL_DIR="$HOME/.local/share/plasma/look-and-feel/com.github.abyss.cobalt" ;;
+            Abyss-Emerald) LOOKFEEL_DIR="$HOME/.local/share/plasma/look-and-feel/com.github.abyss.emerald" ;;
+        esac
+        
+        GTK_THEME_DIR="$HOME/.themes/$THEME_NAME"
+        WALLPAPER_DIR="$HOME/.local/share/wallpapers/$THEME_NAME"
+        COLOR_SCHEME="$HOME/.local/share/color-schemes/$THEME_NAME.colors"
+        
+        remove_plasma_theme
+        remove_lookfeel_package
+        remove_color_scheme
+        
+        [[ "$keep_gtk" != true ]] && remove_gtk_themes
+        [[ "$keep_wallpaper" != true ]] && remove_wallpaper
+    done
     
-    [[ "$keep_gtk" != true ]] && remove_gtk_themes
-    [[ "$keep_wallpaper" != true ]] && remove_wallpaper
+    # Remove shared components (call once for all variants)
+    [[ "$keep_kvantum" != true ]] && remove_kvantum_theme
+    [[ "$keep_aurorae" != true ]] && remove_aurorae_theme
     [[ "$keep_sddm" != true ]] && remove_sddm_theme
+    [[ "$keep_plymouth" != true ]] && remove_plymouth_theme
     
     # Reset settings
     if [[ "$no_reset" != true ]]; then

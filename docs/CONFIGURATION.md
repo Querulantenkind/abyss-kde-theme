@@ -197,6 +197,141 @@ Text {
 }
 ```
 
+### Kvantum Theme
+
+The Kvantum theme provides consistent styling for Qt applications. Configuration files are located at:
+
+```
+~/.config/Kvantum/
+├── kvantum.kvconfig          # Active theme selection
+└── Abyss/                    # (or Abyss-Crimson, etc.)
+    ├── Abyss.svg             # SVG graphics for UI elements
+    └── Abyss.kvconfig        # Theme configuration
+```
+
+**Customizing Kvantum:**
+
+1. Open Kvantum Manager: `kvantummanager`
+2. Select the Abyss theme
+3. Use "Configure Active Theme" for tweaks
+
+**Manual Configuration:**
+
+Edit `~/.config/Kvantum/Abyss/Abyss.kvconfig`:
+
+```ini
+[GeneralColors]
+window.color=#000000           # Window background
+highlight.color=#111111        # Selection color (or accent for variants)
+text.color=#ffffff             # Text color
+```
+
+**Key Settings:**
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `composite` | Enable transparency effects | true |
+| `animate_states` | Animate hover/focus states | true |
+| `scroll_arrows` | Show scrollbar arrows | false |
+| `menu_shadow_depth` | Menu shadow size | 7 |
+
+### Aurorae Window Decoration
+
+The Aurorae theme provides custom window decorations. Files are located at:
+
+```
+~/.local/share/aurorae/themes/Abyss/
+├── decoration.svg            # Window frame graphics
+├── close.svg                 # Close button
+├── maximize.svg              # Maximize button
+├── restore.svg               # Restore button
+├── minimize.svg              # Minimize button
+├── alldesktops.svg           # Pin button
+├── keepabove.svg             # Keep above button
+├── keepbelow.svg             # Keep below button
+├── shade.svg                 # Shade button
+├── Abyssrc                   # Configuration file
+└── metadata.desktop          # Theme metadata
+```
+
+**Customizing Window Decoration:**
+
+Edit `~/.local/share/aurorae/themes/Abyss/Abyssrc`:
+
+```ini
+[General]
+TitleHeight=24                # Title bar height
+ButtonHeight=22               # Button size
+ButtonWidth=22
+PaddingTop=4                  # Border padding
+PaddingLeft=1
+PaddingRight=1
+PaddingBottom=1
+TitleAlignment=Center         # Title text alignment
+ActiveTextColor=#ffffff       # Active window title color
+InactiveTextColor=#111111     # Inactive window title color
+```
+
+**Modifying Button Appearance:**
+
+Edit the SVG files (e.g., `close.svg`) to change button graphics. Each SVG contains multiple states:
+- `close` - Normal state
+- `close-hover` - Mouse hover
+- `close-pressed` - Click state
+- `close-inactive` - Inactive window
+
+### Plymouth Boot Theme
+
+The Plymouth theme provides a boot splash screen. Files are located at:
+
+```
+/usr/share/plymouth/themes/Abyss/
+├── Abyss.plymouth            # Theme descriptor
+└── Abyss.script              # Animation script
+```
+
+**Activating Plymouth Theme:**
+
+```bash
+# Set the theme
+sudo plymouth-set-default-theme Abyss
+
+# Rebuild initramfs (required)
+sudo mkinitcpio -P
+
+# Reboot to see the theme
+```
+
+**Testing Plymouth (without rebooting):**
+
+```bash
+# Test the theme
+sudo plymouthd
+sudo plymouth --show-splash
+# Press Ctrl+C to exit
+sudo plymouth quit
+```
+
+**Customizing Plymouth:**
+
+Edit `/usr/share/plymouth/themes/Abyss/Abyss.script`:
+
+```c
+// Progress bar dimensions
+progress_bar_width = 300;     # Width of progress bar
+progress_bar_height = 4;      # Height of progress bar
+
+// Colors (normalized 0-1)
+accent_r = 0.07;              # Red component
+accent_g = 0.07;              # Green component
+accent_b = 0.07;              # Blue component
+```
+
+**Note:** After modifying Plymouth files, rebuild initramfs:
+```bash
+sudo mkinitcpio -P
+```
+
 ## Configuration Files Locations
 
 After installation, theme files are located at:
@@ -212,6 +347,11 @@ After installation, theme files are located at:
 │       ├── defaults
 │       └── splash/
 │           └── Splash.qml
+├── aurorae/themes/Abyss/         # Window decoration
+│   ├── decoration.svg
+│   ├── close.svg, minimize.svg, maximize.svg, etc.
+│   ├── Abyssrc
+│   └── metadata.desktop
 └── wallpapers/Abyss/
     ├── metadata.json
     └── contents/images/
@@ -229,10 +369,17 @@ After installation, theme files are located at:
 └── gtk-4.0/gtk.css
 
 ~/.config/
+├── Kvantum/
+│   ├── kvantum.kvconfig          # Active theme config
+│   └── Abyss/
+│       ├── Abyss.svg
+│       └── Abyss.kvconfig
+├── environment.d/kvantum.conf    # Qt style override
 ├── gtk-3.0/settings.ini
 └── gtk-4.0/settings.ini
 
-/usr/share/sddm/themes/Abyss/     # (or Abyss-Crimson)
+/usr/share/sddm/themes/Abyss/     # (or Abyss-Crimson) - requires sudo
+/usr/share/plymouth/themes/Abyss/ # Boot splash - requires sudo
 ```
 
 ## Runtime Configuration

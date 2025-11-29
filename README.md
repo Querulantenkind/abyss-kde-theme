@@ -12,6 +12,9 @@ A pure monochrome KDE Plasma theme that transforms your desktop into a mysteriou
   - Plasma Desktop Theme
   - SDDM Login Manager Theme
   - GTK2/GTK3/GTK4 Application Themes
+  - Kvantum Theme (Qt application styling)
+  - Aurorae Window Decoration Theme
+  - Plymouth Boot Splash Screen
   - Custom Color Scheme (proper RGB format)
   - Animated Splash Screen
 - **Multi-Resolution Wallpapers**: Auto-generated for 1920x1080, 2560x1440, 3840x2160, 1366x768
@@ -41,8 +44,12 @@ The script will automatically install required packages:
 - `imagemagick` - Wallpaper generation
 - `qt5-graphicaleffects` / `qt5-quickcontrols` / `qt5-quickcontrols2`
 - `breeze` / `breeze-gtk`
+- `kvantum` - Qt application styling
+- `bc` - Math calculations for Plymouth theme
 
-**Optional (for GTK2 apps):** `gtk-engine-murrine` - available in AUR: `yay -S gtk-engine-murrine`
+**Optional:**
+- `gtk-engine-murrine` - For GTK2 apps (AUR: `yay -S gtk-engine-murrine`)
+- `plymouth` - Boot splash screen (may require AUR or manual configuration)
 
 ## Installation
 
@@ -92,10 +99,17 @@ Each variant installs as a separate theme (Abyss, Abyss-Crimson, Abyss-Cobalt, A
 killall plasmashell && plasmashell &
 ```
 
-2. **Or reboot** for complete SDDM theme application
+2. **Or reboot** for complete SDDM and Plymouth theme application
 
-3. **Manual Theme Selection** (if needed):
+3. **For Plymouth boot theme** (rebuild initramfs):
+```bash
+sudo mkinitcpio -P
+```
+
+4. **Manual Theme Selection** (if needed):
    - System Settings -> Appearance -> Global Theme -> **Abyss** (or variant name)
+   - System Settings -> Appearance -> Window Decorations -> **Abyss**
+   - Kvantum Manager -> Select **Abyss** theme
 
 ### Detailed Installation Guide
 
@@ -103,13 +117,14 @@ See [INSTALL.md](INSTALL.md) for step-by-step instructions and customization opt
 
 ## What Gets Installed
 
-The script creates the following structure in your home directory:
+The script creates the following structure:
 
 ```
 ~/.local/share/
 ├── plasma/
 │   ├── desktoptheme/Abyss/           # (or Abyss-Crimson, etc.)
 │   └── look-and-feel/com.github.abyss/
+├── aurorae/themes/Abyss/             # Window decoration
 ├── color-schemes/Abyss.colors
 └── wallpapers/Abyss/
     └── contents/images/
@@ -124,10 +139,17 @@ The script creates the following structure in your home directory:
 └── gtk-4.0/
 
 ~/.config/
+├── Kvantum/
+│   ├── kvantum.kvconfig              # Active theme config
+│   └── Abyss/                        # Kvantum theme files
+│       ├── Abyss.svg
+│       └── Abyss.kvconfig
+├── environment.d/kvantum.conf        # Qt style override
 ├── gtk-3.0/settings.ini
 └── gtk-4.0/settings.ini
 
-/usr/share/sddm/themes/Abyss/  # Requires sudo
+/usr/share/sddm/themes/Abyss/         # Requires sudo
+/usr/share/plymouth/themes/Abyss/     # Requires sudo (boot splash)
 ```
 
 ## Uninstallation
@@ -144,7 +166,10 @@ The script creates the following structure in your home directory:
 ./uninstall-abyss.sh -y                # Skip confirmation
 ./uninstall-abyss.sh --keep-wallpaper  # Keep wallpaper
 ./uninstall-abyss.sh --keep-gtk        # Keep GTK theme
+./uninstall-abyss.sh --keep-kvantum    # Keep Kvantum theme
+./uninstall-abyss.sh --keep-aurorae    # Keep window decoration
 ./uninstall-abyss.sh --keep-sddm       # Skip SDDM removal
+./uninstall-abyss.sh --keep-plymouth   # Skip Plymouth removal
 ./uninstall-abyss.sh --no-reset        # Don't reset to Breeze
 ./uninstall-abyss.sh --help            # Show all options
 ```
@@ -217,6 +242,27 @@ sudo nano /etc/sddm.conf
 # Set: Current=Abyss under [Theme]
 ```
 
+**Kvantum theme not applied to Qt apps:**
+```bash
+# Ensure QT_STYLE_OVERRIDE is set
+echo 'QT_STYLE_OVERRIDE=kvantum' >> ~/.config/environment.d/kvantum.conf
+# Then logout and login, or restart the application
+```
+
+**Aurorae window decoration not showing:**
+- System Settings -> Appearance -> Window Decorations
+- Select "Abyss" from the list
+- If not visible, restart KWin: `kwin_x11 --replace &` or `kwin_wayland --replace &`
+
+**Plymouth boot theme not showing:**
+```bash
+# Set the theme
+sudo plymouth-set-default-theme -R Abyss
+# Rebuild initramfs
+sudo mkinitcpio -P
+# Reboot to see the theme
+```
+
 ## Philosophy
 
 Abyss embraces **Terminal Purist** principles:
@@ -243,11 +289,11 @@ MIT License - See [LICENSE](LICENSE) file for details.
 - [x] Konsole color scheme
 - [x] Vim color scheme
 - [x] Uninstall script
-- [ ] Kvantum theme integration
-- [ ] Aurorae window decoration theme
+- [x] Kvantum theme integration
+- [x] Aurorae window decoration theme
+- [x] Plymouth boot theme
 - [ ] KRunner theme
 - [ ] Conky configuration
-- [ ] Plymouth boot theme
 - [ ] GRUB theme
 
 ## Gallery

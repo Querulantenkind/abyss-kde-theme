@@ -180,15 +180,20 @@ Contributions should align with:
 
 ## Areas for Contribution
 
+### Completed
+- [x] Kvantum theme integration
+- [x] Aurorae window decoration theme
+- [x] Plymouth boot theme
+- [x] Uninstall script
+- [x] Support for different resolutions
+
 ### High Priority
-- [ ] Kvantum theme integration
 - [ ] Automated screenshot generation
-- [ ] Uninstall script
-- [ ] Support for different resolutions
+- [ ] GRUB boot theme
+- [ ] KRunner theme
 
 ### Medium Priority
 - [ ] Conky configuration
-- [ ] KRunner theme
 - [ ] System tray icon theme
 - [ ] Konsole color scheme export
 
